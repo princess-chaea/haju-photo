@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하주초 교육활동 사진방</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --secondary: #64748b;
+            --accent: #f59e0b;
+            --background: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.8);
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 24px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Layout */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--text);
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Breadcrumbs */
+        .breadcrumb {
+            display: flex;
+            padding: 0.5rem 1rem;
+            margin-bottom: 2rem;
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            width: fit-content;
+        }
+
+        .breadcrumb span {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb i {
+            margin: 0 0.75rem;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+        }
+
+        /* Grid sections */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary);
+        }
+
+        .folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .folder-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .folder-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+
+        .folder-card i {
+            color: #fbbf24;
+            font-size: 1.5rem;
+        }
+
+        .folder-card .details {
+            overflow: hidden;
+        }
+
+        .folder-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .file-card:hover {
+            transform: scale(1.03);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .file-thumb {
+            aspect-ratio: 16/10;
+            width: 100%;
+            object-fit: cover;
+            background: #f1f5f9;
+        }
+
+        .file-info {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80%;
+        }
+
+        .file-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-delete {
+            color: #ef4444;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .file-card:hover .btn-delete {
+            opacity: 1;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            position: relative;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-md);
+            padding: 3rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary-light);
+            background: #eff6ff;
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary-light);
+            margin-bottom: 1rem;
+        }
+
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Image/Video Modal Customization */
+        .preview-modal {
+            max-width: 90vw;
+            width: auto;
+            background: transparent;
+            padding: 0;
+        }
+
+        .preview-modal img, .preview-modal iframe {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: var(--radius-md);
+            display: block;
+        }
+
+        .preview-modal .modal-close {
+            color: white;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Loading Spinner */
+        #loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 1rem; }
+            .logo span { display: none; }
+            .folders-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+            .files-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .modal-content { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="#" class="logo" onclick="loadFolder(null)">
+        <i class="fas fa-camera-retro"></i>
+        <span>하주초 사진방</span>
+    </a>
+    <div class="actions">
+        <button class="btn btn-outline" onclick="openUploadModal()">
+            <i class="fas fa-cloud-upload-alt"></i> 업로드
+        </button>
+    </div>
+</header>
+
+<main>
+    <div id="breadcrumb" class="breadcrumb">
+        <!-- Breadcrumbs injected here -->
+    </div>
+
+    <div id="folders-section">
+        <h2 class="section-title"><i class="fas fa-folder-open"></i> 폴더</h2>
+        <div id="folders-list" class="folders-grid">
+            <!-- Folders injected here -->
+        </div>
+    </div>
+
+    <div id="files-section">
+        <h2 class="section-title"><i class="fas fa-images"></i> 사진 및 영상</h2>
+        <div id="files-list" class="files-grid">
+            <!-- Files injected here -->
+        </div>
+    </div>
+</main>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal">
+    <div class="modal-content">
+        <i class="fas fa-times modal-close" onclick="closeModal('upload-modal')"></i>
+        <h2 style="margin-bottom: 0.5rem;">파일 업로드</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">선택한 폴더로 사진이나 영상을 업로드합니다.</p>
+        
+        <div style="margin-top: 1.5rem;">
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">대상 폴더</label>
+            <select id="target-folder-select" class="btn btn-outline" style="width: 100%; appearance: auto; margin-bottom: 1rem;">
+                <!-- Folders injected here -->
+            </select>
+            
+            <div id="new-folder-toggle" style="margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" id="create-folder-check"> 새 폴더 만들기
+                </label>
+            </div>
+            
+            <div id="new-folder-input" style="display: none; margin-bottom: 1rem;">
+                <input type="text" id="new-folder-name" placeholder="폴더명 입력" class="btn btn-outline" style="width: 100%; text-align: left;">
+            </div>
+        </div>
+
+        <div id="drop-zone" class="upload-area">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>파일을 여기에 끌어놓거나 클릭하세요</p>
+            <input type="file" id="file-input" multiple accept="image/*,video/*" style="display: none;">
+        </div>
+
+        <div id="selected-files" style="max-height: 150px; overflow-y: auto; margin-bottom: 1rem;">
+            <!-- Selected file list -->
+        </div>
+
+        <div id="upload-progress" class="progress-container">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem;">
+                <span id="progress-text">업로드 중...</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <button id="upload-btn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; justify-content: center;" onclick="handleUpload()">
+            업로드 시작
+        </button>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="modal">
+    <div class="modal-content preview-modal">
+        <i class="fas fa-times modal-close" onclick="closeModal('preview-modal')"></i>
+        <div id="preview-container">
+            <!-- Image or Video injected here -->
+        </div>
+    </div>
+</div>
+
+<!-- Password Modal -->
+<div id="password-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <i class="fas fa-times modal-close" onclick="closeModal('password-modal')"></i>
+        <h3>비밀번호 확인</h3>
+        <p style="margin: 1rem 0; font-size: 0.9rem; color: var(--text-muted);">삭제 작업을 계속하려면 관리자 비밀번호를 입력하세요.</p>
+        <input type="password" id="admin-password" class="btn btn-outline" style="width: 100%; margin-bottom: 1rem;" placeholder="비밀번호">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="closeModal('password-modal')">취소</button>
+            <button class="btn btn-primary" style="flex: 1; justify-content: center; background: #ef4444;" onclick="confirmDelete()">삭제</button>
+        </div>
+    </div>
+</div>
+
+<div id="loader"><div class="spinner"></div></div>
+
+<script>
+    // --- Configuration ---
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzynRIlDMKyrZ5LY2xxTHXkwJjQnLcZc1Wjlk6nBtetJIsbAMHmzl3s-PlXNgJAz7w/exec';
+    
+    let currentFolderId = null;
+    let folderPath = [];
+    let allFoldersList = [];
+    let itemToDelete = null;
+
+    // --- Core Functions ---
+
+    window.onload = () => {
+        loadFolder(null);
+        fetchFolderList();
+    };
+
+    /**
+     * 특정 폴더의 내용 로드
+     */
+    async function loadFolder(folderId) {
+        showLoader(true);
+        try {
+            const resp = await fetch(`${GAS_URL}?action=getFiles&folderId=${folderId || ''}`);
+            const data = await resp.json();
+            renderContent(data);
+            updateBreadcrumbs(data);
+            currentFolderId = data.currentFolderId;
+        } catch (err) {
+            console.error(err);
+            alert('데이터를 가져오는 중 오류가 발생했습니다.');
+        } finally {
+            showLoader(false);
+        }
+    }
+
+    /**
+     * 전체 폴더 목록 가져오기 (업로드용)
+     */
+    async function fetchFolderList() {
+        try {
+            const resp = await fetch(`${GAS_URL}?action=getAllFolders`);
+            allFoldersList = await resp.json();
+            renderFolderSelect();
+        } catch (err) {
+            console.error("폴더 목록 로드 실패", err);
+        }
+    }
+
+    function renderContent(data) {
+        const fList = document.getElementById('folders-list');
+        const fileList = document.getElementById('files-list');
+        
+        fList.innerHTML = '';
+        fileList.innerHTML = '';
+
+        // 폴더 렌더링
+        if (data.folders.length === 0) {
+            document.getElementById('folders-section').style.display = 'none';
+        } else {
+            document.getElementById('folders-section').style.display = 'block';
+            data.folders.forEach(folder => {
+                const card = document.createElement('div');
+                card.className = 'folder-card';
+                card.onclick = () => loadFolder(folder.id);
+                card.innerHTML = `
+                    <i class="fas fa-folder"></i>
+                    <div class="details">
+                        <h3>${folder.name}</h3>
+                    </div>
+                `;
+                fList.appendChild(card);
+            });
+        }
+
+        // 파일 렌더링
+        if (data.files.length === 0) {
+            fileList.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 3rem;">업로드된 파일이 없습니다.</p>';
+        } else {
+            data.files.forEach(file => {
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.onclick = (e) => {
+                    if (e.target.closest('.btn-delete')) return;
+                    openPreview(file);
+                };
+                
+                const isVideo = file.isVideo;
+                card.innerHTML = `
+                    <img class="file-thumb" src="${file.thumbnail}" alt="${file.name}" loading="lazy">
+                    ${isVideo ? '<div class="file-badge"><i class="fas fa-play"></i> Video</div>' : ''}
+                    <div class="file-info">
+                        <span class="file-name" title="${file.name}">${file.name}</span>
+                        <button class="btn-delete" onclick="promptDelete('${file.id}', 'file')"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                fileList.appendChild(card);
+            });
+        }
+    }
+
+    function updateBreadcrumbs(data) {
+        const bc = document.getElementById('breadcrumb');
+        bc.innerHTML = `<span><a href="#" onclick="loadFolder(null)">Home</a></span>`;
+        if (data.currentFolderId !== data.rootId) { // Simplified for now
+            bc.innerHTML += `<i>/</i><span>${data.currentFolderName}</span>`;
+        }
+    }
+
+    // --- UI Interactions ---
+
+    function openUploadModal() {
+        document.getElementById('upload-modal').classList.add('active');
+        renderFolderSelect();
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+        if (id === 'upload-modal') {
+            resetUploadState();
+        }
+    }
+
+    function renderFolderSelect() {
+        const select = document.getElementById('target-folder-select');
+        select.innerHTML = allFoldersList.map(f => 
+            `<option value="${f.id}" ${f.id === currentFolderId ? 'selected' : ''}>${f.name}</option>`
+        ).join('');
+    }
+
+    // Toggle new folder input
+    document.getElementById('create-folder-check').onchange = (e) => {
+        document.getElementById('new-folder-input').style.display = e.target.checked ? 'block' : 'none';
+        document.getElementById('target-folder-select').disabled = e.target.checked;
+    };
+
+    // Drag and Drop
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.onclick = () => document.getElementById('file-input').click();
+    
+    dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    };
+
+    document.getElementById('file-input').onchange = e => handleFiles(e.target.files);
+
+    let filesToUpload = [];
+    function handleFiles(files) {
+        filesToUpload = Array.from(files);
+        const listContainer = document.getElementById('selected-files');
+        listContainer.innerHTML = filesToUpload.map(f => 
+            `<div style="font-size: 0.8rem; padding: 5px; border-bottom: 1px solid #eee;">${f.name} (${(f.size/1024/1024).toFixed(2)}MB)</div>`
+        ).join('');
+    }
+
+    async function handleUpload() {
+        if (filesToUpload.length === 0) return alert('업로드할 파일을 선택하세요.');
+        
+        const targetId = document.getElementById('target-folder-select').value;
+        const isNewFolder = document.getElementById('create-folder-check').checked;
+        const newFolderName = document.getElementById('new-folder-name').value;
+        
+        if (isNewFolder && !newFolderName) return alert('새 폴더명을 입력하세요.');
+
+        showProgress(true);
+        const btn = document.getElementById('upload-btn');
+        btn.disabled = true;
+
+        for (let i = 0; i < filesToUpload.length; i++) {
+            const file = filesToUpload[i];
+            updateProgress(i, filesToUpload.length, 0, file.name);
+            
+            try {
+                const base64Data = await convertToBase64(file);
+                const resp = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'upload',
+                        data: base64Data,
+                        fileName: file.name,
+                        mimeType: file.type,
+                        targetFolderId: targetId,
+                        newFolderName: i === 0 ? (isNewFolder ? newFolderName : "") : "" // First file creates folder if needed
+                    })
+                });
+                const result = await resp.json();
+                if (!result.success) throw new Error(result.error);
+                updateProgress(i + 1, filesToUpload.length, 100, file.name);
+            } catch (err) {
+                console.error(err);
+                alert(`${file.name} 업로드 실패: ${err.message}`);
+                break;
+            }
+        }
+
+        alert('모든 업로드가 완료되었습니다.');
+        closeModal('upload-modal');
+        loadFolder(currentFolderId);
+        fetchFolderList();
+    }
+
+    function convertToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function openPreview(file) {
+        const container = document.getElementById('preview-container');
+        container.innerHTML = '';
+        
+        if (file.isVideo) {
+            container.innerHTML = `
+                <iframe src="${file.previewUrl}" width="800" height="450" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                <div style="color:white; margin-top:1rem; text-align:center;">${file.name}</div>
+            `;
+        } else {
+            container.innerHTML = `
+                <img src="${file.previewUrl}" alt="${file.name}">
+                <div style="color:white; margin-top:1rem; text-align:center;">${file.name}</div>
+            `;
+        }
+        document.getElementById('preview-modal').classList.add('active');
+    }
+
+    function promptDelete(id, type) {
+        itemToDelete = { id, type };
+        document.getElementById('password-modal').classList.add('active');
+    }
+
+    async function confirmDelete() {
+        const password = document.getElementById('admin-password').value;
+        if (!password) return alert('비밀번호를 입력하세요.');
+        
+        showLoader(true);
+        try {
+            const resp = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'delete',
+                    itemId: itemToDelete.id,
+                    itemType: itemToDelete.type,
+                    password: password
+                })
+            });
+            const result = await resp.json();
+            if (result.success) {
+                alert('삭제되었습니다.');
+                closeModal('password-modal');
+                loadFolder(currentFolderId);
+            } else {
+                alert(result.error);
+            }
+        } catch (err) {
+            alert('삭제 중 오류 발생');
+        } finally {
+            showLoader(false);
+            document.getElementById('admin-password').value = '';
+        }
+    }
+
+    // --- Helpers ---
+
+    function showLoader(show) {
+        document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+
+    function showProgress(show) {
+        document.getElementById('upload-progress').style.display = show ? 'block' : 'none';
+    }
+
+    function updateProgress(done, total, percent, fileName) {
+        const pFill = document.getElementById('progress-fill');
+        const pText = document.getElementById('progress-text');
+        const pPercent = document.getElementById('progress-percent');
+        
+        const overall = Math.floor(((done / total) * 100));
+        pFill.style.width = overall + '%';
+        pText.innerText = `업로드 중: ${fileName} (${done}/${total})`;
+        pPercent.innerText = overall + '%';
+    }
+
+    function resetUploadState() {
+        filesToUpload = [];
+        document.getElementById('selected-files').innerHTML = '';
+        document.getElementById('upload-progress').style.display = 'none';
+        document.getElementById('upload-btn').disabled = false;
+        document.getElementById('progress-fill').style.width = '0%';
+        document.getElementById('create-folder-check').checked = false;
+        document.getElementById('new-folder-input').style.display = 'none';
+        document.getElementById('target-folder-select').disabled = false;
+    }
+
+</script>
+</body>
+</html>
