@@ -119,9 +119,67 @@
             border: 1px solid #e2e8f0;
         }
 
-        .btn-outline:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 1.25rem;
+            height: 1.25rem;
+            top: 50%;
+            left: 50%;
+            margin: -0.625rem 0 0 -0.625rem;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: toastUp 0.3s ease-out, toastDown 0.3s ease-in 2.7s forwards;
+            min-width: 300px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+
+        @keyframes toastUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes toastDown {
+            to { transform: translateY(100%); opacity: 0; }
         }
 
         main {
@@ -542,7 +600,19 @@
     </div>
 </div>
 
-<div id="loader"><div class="spinner"></div></div>
+<!-- Success Modal -->
+<div id="success-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div style="width: 60px; height: 60px; background: #ecfdf5; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 1.5rem;">
+            <i class="fas fa-check"></i>
+        </div>
+        <h3 id="success-title">완료되었습니다!</h3>
+        <p id="success-msg" style="margin: 1rem 0; color: var(--text-muted); font-size: 0.9rem;">작업이 성공적으로 마쳤습니다.</p>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="closeModal('success-modal')">확인</button>
+    </div>
+</div>
+
+<div id="toast-container"></div>
 
 <script>
     // --- Configuration ---
@@ -577,7 +647,7 @@
             currentFolderId = data.currentFolderId;
         } catch (err) {
             console.error(err);
-            alert('데이터를 가져오는 중 오류가 발생했습니다.');
+            showToast('데이터를 가져오는 중 오류가 발생했습니다.', 'error');
         } finally {
             showLoader(false);
         }
@@ -664,6 +734,11 @@
     }
 
     function closeModal(id) {
+        // 업로드 중일 때는 업로드 모달 닫기 방지
+        if (id === 'upload-modal' && document.getElementById('upload-btn').disabled) {
+            showToast('업로드 중에는 창을 닫을 수 없습니다.', 'error');
+            return;
+        }
         document.getElementById(id).classList.remove('active');
         if (id === 'upload-modal') {
             resetUploadState();
@@ -722,26 +797,28 @@
     }
 
     async function handleUpload() {
-        if (filesToUpload.length === 0) return alert('업로드할 파일을 선택하세요.');
+        if (filesToUpload.length === 0) return showToast('파일을 선택해 주세요.', 'error');
         
         const targetId = document.getElementById('target-folder-select').value;
         const isNewFolder = document.getElementById('create-folder-check').checked;
         
         let finalFolderName = "";
         if (isNewFolder) {
-            const dateVal = document.getElementById('new-folder-date').value; // YYYY-MM-DD
+            const dateVal = document.getElementById('new-folder-date').value;
             const activityName = document.getElementById('new-folder-activity').value.trim();
             
-            if (!dateVal || !activityName) return alert('활동 날짜와 활동명을 모두 입력하세요.');
+            if (!dateVal || !activityName) return showToast('날짜와 활동명을 입력해 주세요.', 'error');
             
-            const dateParts = dateVal.split('-'); // [YYYY, MM, DD]
-            finalFolderName = `${dateParts[1]}${dateParts[2]} ${activityName}`; // MMDD 활동명
+            const dateParts = dateVal.split('-');
+            finalFolderName = `${dateParts[1]}${dateParts[2]} ${activityName}`;
         }
         
         showProgress(true);
         const btn = document.getElementById('upload-btn');
         btn.disabled = true;
+        btn.classList.add('btn-loading');
 
+        let currentTargetId = targetId;
         for (let i = 0; i < filesToUpload.length; i++) {
             const file = filesToUpload[i];
             updateProgress(i, filesToUpload.length, 0, file.name);
@@ -755,21 +832,30 @@
                         data: base64Data,
                         fileName: file.name,
                         mimeType: file.type,
-                        targetFolderId: targetId,
-                        newFolderName: i === 0 ? finalFolderName : "" // 첫 파일 업로드 시 새 폴더 생성
+                        targetFolderId: currentTargetId,
+                        newFolderName: i === 0 ? finalFolderName : ""
                     })
                 });
                 const result = await resp.json();
                 if (!result.success) throw new Error(result.error);
+
+                // 첫 번째 파일 업로드 후 생성된(또는 기존) 폴더 ID로 업데이트
+                if (i === 0 && result.folderId) {
+                    currentTargetId = result.folderId;
+                }
+                
                 updateProgress(i + 1, filesToUpload.length, 100, file.name);
             } catch (err) {
                 console.error(err);
-                alert(`${file.name} 업로드 실패: ${err.message}`);
+                showToast(`${file.name} 업로드 실패`, 'error');
                 break;
             }
         }
 
-        alert('모든 업로드가 완료되었습니다.');
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        
+        showSuccessModal('업로드 완료', '모든 파일이 안전하게 저장되었습니다.');
         closeModal('upload-modal');
         loadFolder(currentFolderId);
         fetchFolderList();
@@ -809,7 +895,7 @@
 
     async function confirmDelete() {
         const password = document.getElementById('admin-password').value;
-        if (!password) return alert('비밀번호를 입력하세요.');
+        if (!password) return showToast('비밀번호를 입력하세요.', 'error');
         
         showLoader(true);
         try {
@@ -824,14 +910,14 @@
             });
             const result = await resp.json();
             if (result.success) {
-                alert('삭제되었습니다.');
+                showToast('삭제되었습니다.', 'success');
                 closeModal('password-modal');
                 loadFolder(currentFolderId);
             } else {
-                alert(result.error);
+                showToast(result.error, 'error');
             }
         } catch (err) {
-            alert('삭제 중 오류 발생');
+            showToast('삭제 과정에서 오류가 발생했습니다.', 'error');
         } finally {
             showLoader(false);
             document.getElementById('admin-password').value = '';
@@ -839,6 +925,28 @@
     }
 
     // --- Helpers ---
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+        
+        toast.innerHTML = `
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showSuccessModal(title, msg) {
+        document.getElementById('success-title').innerText = title;
+        document.getElementById('success-msg').innerText = msg;
+        document.getElementById('success-modal').classList.add('active');
+    }
 
     function showLoader(show) {
         document.getElementById('loader').style.display = show ? 'block' : 'none';
