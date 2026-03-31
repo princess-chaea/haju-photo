@@ -643,7 +643,8 @@
 
 <header>
     <a href="#" class="logo" onclick="loadFolder(null)">
-        <img src="https://www.haju.es.kr/site/haju/img/sub/img_sub0102_02.jpg" alt="Logo">
+        <img src="https://www.haju.es.kr/site/haju/img/sub/img_sub0102_02.jpg" alt="Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+        <i class="fas fa-school" style="display:none; color:var(--primary); font-size:1.8rem; margin-right:10px;"></i>
         <span>하주초 사진방</span>
     </a>
     <div class="actions">
@@ -1177,6 +1178,52 @@
         document.getElementById('progress-text').innerText = `${n} (${d}/${t})`;
     }
     function resetUploadState() { filesToUpload = []; document.getElementById('selected-files').innerHTML = ''; }
+
+    // --- Added Missing Helpers ---
+    function showLoader(show) {
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = show ? 'block' : 'none';
+    }
+
+    function showSuccessModal(title, msg) {
+        const modal = document.getElementById('success-modal');
+        if (modal) {
+            document.getElementById('success-title').innerText = title;
+            document.getElementById('success-msg').innerHTML = msg;
+            modal.classList.add('active');
+        }
+    }
+
+    function showCustomConfirm(title, msg, onConfirm) {
+        const modal = document.getElementById('confirm-modal');
+        if (modal) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerHTML = msg;
+            const okBtn = document.getElementById('confirm-ok-btn');
+            okBtn.onclick = () => {
+                modal.classList.remove('active');
+                onConfirm();
+            };
+            modal.classList.add('active');
+        }
+    }
+
+    function showCustomPrompt(title, msg, defaultValue, onConfirm) {
+        const modal = document.getElementById('prompt-modal');
+        if (modal) {
+            document.getElementById('prompt-title').innerText = title;
+            document.getElementById('prompt-msg').innerHTML = msg;
+            const input = document.getElementById('prompt-input');
+            input.value = defaultValue;
+            const okBtn = document.getElementById('prompt-ok-btn');
+            okBtn.onclick = () => {
+                modal.classList.remove('active');
+                onConfirm(input.value);
+            };
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 100);
+        }
+    }
 </script>
 </body>
 </html>
