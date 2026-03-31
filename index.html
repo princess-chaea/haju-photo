@@ -112,6 +112,19 @@
             box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
         }
 
+        .btn-delete-multi {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+            display: none;
+        }
+
+        .btn-delete-multi:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+        }
+
         .btn-drive {
             color: #34a853;
             border-color: #34a853;
@@ -121,14 +134,6 @@
             background: #f0fdf4;
             border-color: #166534;
             color: #166534;
-        }
-
-        .btn-select-all {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.8rem;
-            height: auto;
-            border-color: #cbd5e1;
-            color: #64748b;
         }
 
         .btn:disabled {
@@ -195,7 +200,7 @@
         }
 
         main {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 2rem auto;
             padding: 0 2rem;
         }
@@ -333,11 +338,7 @@
         .file-card.selected {
             background: #eff6ff;
             border: 2px solid var(--primary);
-            transform: translateY(-5px) scale(0.98);
-        }
-
-        .file-card.selected .file-thumb {
-            opacity: 0.8;
+            transform: translateY(-5px) scale(0.95);
         }
 
         .file-check {
@@ -388,9 +389,8 @@
 
         .file-info {
             padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
+            background: white;
         }
 
         .file-name {
@@ -399,22 +399,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 80%;
-        }
-
-        .btn-delete {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: color 0.2s;
-            padding: 0.25rem;
-            opacity: 0.6;
-        }
-
-        .btn-delete:hover {
-            color: #ef4444;
-            opacity: 1;
+            display: block;
         }
 
         /* Modal Styles */
@@ -481,30 +466,6 @@
             box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--secondary);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: var(--radius-md);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-            border-color: var(--primary);
-        }
-
         .upload-area {
             border: 2px dashed #e2e8f0;
             padding: 2rem;
@@ -557,13 +518,6 @@
             background: var(--primary-light);
             width: 0;
             transition: width 0.3s;
-        }
-
-        #preview-container img, #preview-container video {
-            max-width: 100%;
-            max-height: 80vh;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
         }
 
         @media (max-width: 768px) {
@@ -648,16 +602,19 @@
         <span>하주초 사진방</span>
     </a>
     <div class="actions">
-        <a id="drive-link" href="#" target="_blank" class="btn btn-outline btn-drive" title="구글 드라이브에서 열기">
+        <a id="drive-link" href="#" target="_blank" class="btn btn-outline btn-drive" title="드라이브 바로가기">
             <i class="fab fa-google-drive"></i> 드라이브
         </a>
+        <button id="multi-download-btn" class="btn btn-download" onclick="downloadSelected()">
+            <i class="fas fa-download"></i> 다운로드
+        </button>
         <button id="multi-zip-btn" class="btn btn-zip" onclick="downloadAsZip()">
             <i class="fas fa-file-archive"></i> ZIP 압축
         </button>
-        <button id="multi-download-btn" class="btn btn-download" onclick="downloadSelected()">
-            <i class="fas fa-download"></i> <span id="download-count">0개 다운로드</span>
+        <button id="multi-delete-btn" class="btn btn-delete-multi" onclick="deleteSelected()">
+            <i class="fas fa-trash-alt"></i> 삭제
         </button>
-        <button class="btn btn-outline" onclick="openUploadModal()">
+        <button class="btn btn-primary" onclick="openUploadModal()">
             <i class="fas fa-cloud-upload-alt"></i> 업로드
         </button>
     </div>
@@ -669,22 +626,16 @@
     </div>
 
     <div id="folders-section">
-        <h2 class="section-title"><i class="fas fa-folder-open"></i> 모든 폴더</h2>
-        <div id="folders-list" class="folders-grid">
-            <!-- Folders injected here -->
-        </div>
+        <h2 class="section-title"><i class="fas fa-folder-open"></i> 모든 폴더 <small style="font-weight: normal; font-size: 0.8rem; color: var(--text-muted); margin-left:10px;">(더블 클릭 시 입장)</small></h2>
+        <div id="folders-list" class="folders-grid"></div>
     </div>
 
     <div id="files-section">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 class="section-title" style="margin: 0;"><i class="fas fa-images"></i> 사진 및 영상</h2>
-            <button class="btn btn-outline btn-select-all" onclick="selectAllFiles()">
-                <i class="fas fa-check-double"></i> 전체 선택/해제
-            </button>
+            <h2 class="section-title" style="margin: 0;"><i class="fas fa-images"></i> 사진 및 영상 <small style="font-weight: normal; font-size: 0.8rem; color: var(--text-muted); margin-left:10px;">(더블 클릭 시 크게 보기)</small></h2>
+            <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.4rem 1rem;" onclick="selectAll()">전체 선택/해제</button>
         </div>
-        <div id="files-list" class="files-grid" style="margin-top: 1rem;">
-            <!-- Files injected here -->
-        </div>
+        <div id="files-list" class="files-grid" style="margin-top:1.5rem;"></div>
     </div>
 </main>
 
@@ -692,23 +643,22 @@
 <div id="upload-modal" class="modal">
     <div class="modal-content">
         <h3>파일 업로드</h3>
-        <p>폴더를 선택하거나 직접 드래그하여 업로드하세요.</p>
+        <p>활동명에 맞춰 파일 이름이 **활동명1, 활동명2...**로 자동 변경됩니다.</p>
         
-        <div class="form-group">
-            <label class="form-label">업로드 할 폴더 선택</label>
-            <select id="target-folder-select" class="form-input"></select>
+        <div class="form-group" style="margin-bottom:1.5rem;">
+            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">업로드 위치 선택</label>
+            <select id="target-folder-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;"></select>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom:1.5rem;">
             <input type="checkbox" id="create-folder-check" onchange="toggleNewFolderInput()">
             <label for="create-folder-check" style="font-weight: 600;">새 폴더 생성 후 업로드</label>
         </div>
 
-        <div id="new-folder-input" class="form-group" style="display: none; background: #f8fafc; padding: 1rem; border-radius: var(--radius-md);">
-            <p style="margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--primary);">규칙: 일시(MMDD) + 활동명 (예: 0412 과학행사)</p>
+        <div id="new-folder-input" class="form-group" style="display: none; background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom:1.5rem;">
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="target-date" class="form-input" placeholder="날짜(MMDD)" style="width: 100px;" maxlength="4">
-                <input type="text" id="target-name" class="form-input" placeholder="활동명 예: 과학행사">
+                <input type="text" id="target-date" class="form-input" placeholder="날짜(0412)" style="width: 120px; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
+                <input type="text" id="target-name" class="form-input" placeholder="활동명(과학행사)" style="flex:1; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
             </div>
         </div>
         
@@ -723,12 +673,8 @@
         <div id="upload-progress" class="progress-container">
             <div id="progress-fill" class="progress-fill"></div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
-            <span id="progress-text" style="color: var(--text-muted);">대기 중...</span>
-            <span id="progress-percent" style="font-weight: 700; color: var(--primary);">0%</span>
-        </div>
         
-        <div style="display: flex; gap: 1rem;">
+        <div style="display: flex; gap: 1rem; margin-top:2rem;">
             <button class="btn btn-outline" style="flex: 1" onclick="closeModal('upload-modal')">취소</button>
             <button id="upload-btn" class="btn btn-primary" style="flex: 1" onclick="handleUpload()">업로드 시작</button>
         </div>
@@ -737,12 +683,10 @@
 
 <div id="success-modal" class="modal">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <div style="width: 60px; height: 60px; background: #ecfdf5; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 1.5rem;">
-            <i class="fas fa-check"></i>
-        </div>
-        <h3 id="success-title">완료되었습니다!</h3>
+        <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
+        <h3 id="success-title">완료</h3>
         <p id="success-msg"></p>
-        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="closeModal('success-modal')">확인</button>
+        <button class="btn btn-primary" style="width: 100%" onclick="closeModal('success-modal')">확인</button>
     </div>
 </div>
 
@@ -751,8 +695,8 @@
         <h3 id="confirm-title">확인</h3>
         <p id="confirm-msg"></p>
         <div style="display: flex; gap: 10px;">
-            <button class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="closeModal('confirm-modal')">취소</button>
-            <button id="confirm-ok-btn" class="btn btn-primary" style="flex: 1; justify-content: center;">확인</button>
+            <button class="btn btn-outline" style="flex: 1" onclick="closeModal('confirm-modal')">취소</button>
+            <button id="confirm-ok-btn" class="btn btn-primary" style="flex: 1">확인</button>
         </div>
     </div>
 </div>
@@ -761,10 +705,10 @@
     <div class="modal-content" style="max-width: 400px;">
         <h3 id="prompt-title">입력</h3>
         <p id="prompt-msg"></p>
-        <input type="text" id="prompt-input" class="prompt-input" placeholder="이름을 입력하세요">
+        <input type="text" id="prompt-input" class="prompt-input">
         <div style="display: flex; gap: 10px;">
-            <button class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="closeModal('prompt-modal')">취소</button>
-            <button id="prompt-ok-btn" class="btn btn-primary" style="flex: 1; justify-content: center;">확인</button>
+            <button class="btn btn-outline" style="flex: 1" onclick="closeModal('prompt-modal')">취소</button>
+            <button id="prompt-ok-btn" class="btn btn-primary" style="flex: 1">확인</button>
         </div>
     </div>
 </div>
@@ -772,23 +716,19 @@
 <div id="password-modal" class="modal">
     <div class="modal-content" style="max-width: 400px;">
         <h3>삭제 확인</h3>
-        <p>삭제를 계속하시려면 관리자 비밀번호를 입력하세요.</p>
+        <p>선택한 파일을 삭제하시겠습니까? 관리자 비밀번호를 입력하세요.</p>
         <input type="password" id="admin-password" class="prompt-input" placeholder="비밀번호 입력">
         <div style="display: flex; gap: 10px;">
-            <button class="btn btn-outline" style="flex: 1; justify-content: center;" onclick="closeModal('password-modal')">취소</button>
-            <button class="btn btn-primary" style="flex: 1; justify-content: center; background: #ef4444;" onclick="confirmDelete()">삭제 실행</button>
+            <button class="btn btn-outline" style="flex: 1" onclick="closeModal('password-modal')">취소</button>
+            <button class="btn btn-primary" style="flex: 1; background:#ef4444;" onclick="confirmDelete()">삭제 실행</button>
         </div>
     </div>
 </div>
 
 <div id="preview-modal" class="modal">
-    <div class="modal-content" style="padding:0; background:transparent; box-shadow:none; width:auto; max-width:95vw;">
-        <button onclick="closeModal('preview-modal')" style="position:fixed; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; z-index:100; font-size:1.2rem;">
-            <i class="fas fa-times"></i>
-        </button>
-        <div id="preview-container" style="display:flex; justify-content:center; align-items:center; min-height:50vh;">
-            <!-- content -->
-        </div>
+    <div class="modal-content" style="max-width:90vw; max-height:90vh; padding:1rem; background:transparent; box-shadow:none;">
+        <button onclick="closeModal('preview-modal')" style="position:fixed; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:none; width:45px; height:45px; border-radius:50%; cursor:pointer; font-size:1.5rem; z-index:2100;"><i class="fas fa-times"></i></button>
+        <div id="preview-container" style="display:flex; justify-content:center; align-items:center; min-height:80vh;"></div>
     </div>
 </div>
 
@@ -800,11 +740,8 @@
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbzynRIlDMKyrZ5LY2xxTHXkwJjQnLcZc1Wjlk6nBtetJIsbAMHmzl3s-PlXNgJAz7w/exec';
     
     let currentFolderId = null;
-    let folderPath = [];
-    let allFoldersList = [];
-    let itemToDelete = null;
-    let selectedIds = new Set(); 
-    let currentFiles = []; 
+    let selectedIds = new Set();
+    let currentFiles = [];
     let filesToUpload = [];
 
     window.onload = () => {
@@ -816,49 +753,39 @@
         showLoader(true);
         selectedIds.clear();
         currentFiles = [];
-        updateDownloadButton();
+        updateToolbar();
         try {
             const resp = await fetch(`${GAS_URL}?action=getFiles&folderId=${folderId || ''}`);
             const data = await resp.json();
             renderContent(data);
-            updateBreadcrumbs(data);
             currentFolderId = data.currentFolderId;
             
             const driveBtn = document.getElementById('drive-link');
-            if (data.driveUrl) {
-                driveBtn.href = data.driveUrl;
-                driveBtn.style.display = 'inline-flex';
-            } else {
-                driveBtn.style.display = 'none';
-            }
-        } catch (err) {
-            console.error(err);
-            showToast('데이터를 가져오는 중 오류가 발생했습니다.', 'error');
-        } finally {
-            showLoader(false);
-        }
+            if (data.driveUrl) { driveBtn.href = data.driveUrl; driveBtn.style.display = 'inline-flex'; }
+            else { driveBtn.style.display = 'none'; }
+        } finally { showLoader(false); }
     }
 
     async function fetchFolderList() {
         try {
             const resp = await fetch(`${GAS_URL}?action=getAllFolders`);
-            allFoldersList = await resp.json();
+            const folders = await resp.json();
             const select = document.getElementById('target-folder-select');
-            select.innerHTML = '';
-            allFoldersList.forEach(f => {
+            select.innerHTML = '<option value="">(최상위 폴더)</option>';
+            folders.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
                 opt.innerText = f.name;
                 if (f.id === currentFolderId) opt.selected = true;
                 select.appendChild(opt);
             });
-        } catch (err) {}
+        } catch (e) {}
     }
 
     function renderContent(data) {
-        const fList = document.getElementById('folders-list');
+        const folderList = document.getElementById('folders-list');
         const fileList = document.getElementById('files-list');
-        fList.innerHTML = '';
+        folderList.innerHTML = '';
         fileList.innerHTML = '';
         currentFiles = data.files;
 
@@ -866,102 +793,122 @@
             document.getElementById('folders-section').style.display = 'none';
         } else {
             document.getElementById('folders-section').style.display = 'block';
-            data.folders.forEach(folder => {
+            data.folders.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'folder-card';
-                card.dataset.id = folder.id;
-                card.onclick = (e) => toggleSelect(folder.id, card);
-                card.innerHTML = `
-                    <i class="fas fa-folder"></i>
-                    <div class="details" style="flex:1;">
-                        <h3>${folder.name}</h3>
-                    </div>
-                    <button class="btn-delete" style="opacity:1; color:var(--primary); font-size:1.2rem;" onclick="event.stopPropagation(); loadFolder('${folder.id}')">
-                        <i class="fas fa-chevron-circle-right"></i>
-                    </button>
-                    <button class="btn-delete" style="opacity:1; margin-left:10px;" onclick="event.stopPropagation(); promptDelete('${folder.id}', 'folder')">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                `;
-                fList.appendChild(card);
+                card.dataset.id = f.id;
+                card.onclick = () => toggleSelect(f.id, card);
+                card.ondblclick = () => loadFolder(f.id);
+                card.innerHTML = `<i class="fas fa-folder"></i><h3>${f.name}</h3>`;
+                folderList.appendChild(card);
             });
         }
 
-        if (data.files.length === 0) {
-            if (data.folders.length === 0) {
-                fileList.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted);">폴더가 비어있습니다.</div>';
-            }
+        if (data.files.length === 0 && data.folders.length === 0) {
+            fileList.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted);">표시할 내용이 없습니다.</div>';
         } else {
-            data.files.forEach(file => {
+            data.files.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'file-card';
-                card.dataset.id = file.id;
-                card.onclick = () => toggleSelect(file.id, card);
-                
-                const isVideo = file.isVideo;
+                card.dataset.id = f.id;
+                card.onclick = () => toggleSelect(f.id, card);
+                card.ondblclick = () => openPreview(f);
                 card.innerHTML = `
                     <div class="file-check"><i class="fas fa-check"></i></div>
-                    <img class="file-thumb" src="${file.thumbnail}" alt="${file.name}" loading="lazy">
-                    ${isVideo ? '<div class="file-badge"><i class="fas fa-play"></i> Video</div>' : ''}
-                    <div class="file-info">
-                        <span class="file-name" title="${file.name}">${file.name}</span>
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <button class="btn-delete" style="opacity:1; color:#3b82f6; font-size:1.1rem;" onclick="event.stopPropagation(); openPreviewById('${file.id}')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-delete" style="opacity:1; font-size:1.1rem;" onclick="event.stopPropagation(); promptDelete('${file.id}', 'file')"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </div>
+                    <img class="file-thumb" src="${f.thumbnail}" loading="lazy">
+                    ${f.isVideo ? '<div class="file-badge">VIDEO</div>' : ''}
+                    <div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span></div>
                 `;
                 fileList.appendChild(card);
             });
         }
     }
 
-    function toggleSelect(id, element) {
-        if (selectedIds.has(id)) {
-            selectedIds.delete(id);
-            element.classList.remove('selected');
-        } else {
-            selectedIds.add(id);
-            element.classList.add('selected');
-        }
-        updateDownloadButton();
+    function toggleSelect(id, el) {
+        if (selectedIds.has(id)) { selectedIds.delete(id); el.classList.remove('selected'); }
+        else { selectedIds.add(id); el.classList.add('selected'); }
+        updateToolbar();
     }
 
-    function updateDownloadButton() {
+    function selectAll() {
+        const cards = document.querySelectorAll('.folder-card, .file-card');
+        const allSelected = Array.from(cards).every(c => selectedIds.has(c.dataset.id));
+        cards.forEach(c => {
+            if (allSelected) { selectedIds.delete(c.dataset.id); c.classList.remove('selected'); }
+            else { selectedIds.add(c.dataset.id); c.classList.add('selected'); }
+        });
+        updateToolbar();
+    }
+
+    function updateToolbar() {
         const dBtn = document.getElementById('multi-download-btn');
         const zBtn = document.getElementById('multi-zip-btn');
-        const countSpan = document.getElementById('download-count');
-        if (selectedIds.size > 0) {
+        const rBtn = document.getElementById('multi-delete-btn');
+        
+        const count = selectedIds.size;
+        if (count > 0) {
             dBtn.style.display = 'inline-flex';
             zBtn.style.display = 'inline-flex';
-            countSpan.innerText = `${selectedIds.size}개 다운로드`;
+            rBtn.style.display = 'inline-flex';
         } else {
             dBtn.style.display = 'none';
             zBtn.style.display = 'none';
+            rBtn.style.display = 'none';
         }
     }
 
-    function selectAllFiles() {
-        const cards = document.querySelectorAll('.file-card, .folder-card');
-        const allSelected = Array.from(cards).every(card => selectedIds.has(card.dataset.id));
-        if (allSelected) {
-            selectedIds.clear();
-            cards.forEach(card => card.classList.remove('selected'));
-        } else {
-            cards.forEach(card => {
-                selectedIds.add(card.dataset.id);
-                card.classList.add('selected');
+    function deleteSelected() {
+        if (selectedIds.size === 0) return;
+        document.getElementById('admin-password').value = '';
+        document.getElementById('password-modal').classList.add('active');
+    }
+
+    async function confirmDelete() {
+        const password = document.getElementById('admin-password').value;
+        if (!password) return showToast('비밀번호를 입력하세요.', 'error');
+        
+        showLoader(true);
+        try {
+            const resp = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'delete',
+                    itemIds: Array.from(selectedIds),
+                    password: password
+                })
             });
+            const result = await resp.json();
+            if (result.success) {
+                showToast(result.message || '삭제되었습니다.', 'success');
+                closeModal('password-modal');
+                loadFolder(currentFolderId);
+            } else {
+                showToast(result.error, 'error');
+            }
+        } finally { showLoader(false); }
+    }
+
+    async function downloadSelected() {
+        const ids = Array.from(selectedIds);
+        showToast('다운로드를 시작합니다 (파일 항목만 해당)...', 'info');
+        for (const id of ids) {
+            const file = currentFiles.find(f => f.id === id);
+            if (!file) continue;
+            const link = document.createElement('a');
+            link.href = `https://drive.google.com/uc?export=download&id=${id}`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            await new Promise(r => setTimeout(r, 400));
         }
-        updateDownloadButton();
     }
 
     async function downloadAsZip() {
-        if (selectedIds.size === 0) return;
-        showCustomPrompt("ZIP 압축 다운로드", "압축 파일 이름을 입력하세요:", "haju_photos", async (zipName) => {
+        showCustomPrompt("ZIP 압축", "압축 파일명을 입력하세요:", "haju_download", async (zipName) => {
             if (!zipName) return;
             showLoader(true);
-            showToast('압축 중... (폴더 포함 시 시간이 소요됩니다)', 'info');
+            showToast('압축 중입니다...', 'info');
             try {
                 const resp = await fetch(GAS_URL, {
                     method: 'POST',
@@ -969,260 +916,175 @@
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    showToast('압축 완료! 다운로드를 시작합니다.', 'success');
                     const link = document.createElement('a');
                     link.href = result.downloadUrl;
                     link.click();
-                    selectedIds.clear();
-                    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-                    updateDownloadButton();
-                } else {
-                    showToast(result.error, 'error');
-                }
-            } catch (err) {
-                showToast('압축 오류 발생', 'error');
-            } finally {
-                showLoader(false);
-            }
+                    showToast('압축 완료!', 'success');
+                } else { showToast(result.error, 'error'); }
+            } finally { showLoader(false); }
         });
     }
 
-    async function downloadSelected() {
-        if (selectedIds.size === 0) return;
-        showCustomConfirm("다운로드 확인", `${selectedIds.size}개 항목을 다운로드하시겠습니까?<br><small style="color:red">* 폴더는 ZIP 압축을 권장합니다.</small>`, async () => {
-            const ids = Array.from(selectedIds);
-            for (const id of ids) {
-                const file = currentFiles.find(f => f.id === id);
-                if (!file) continue;
-                const link = document.createElement('a');
-                link.href = `https://drive.google.com/uc?export=download&id=${id}`;
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                await new Promise(r => setTimeout(r, 400));
-            }
-            selectedIds.clear();
-            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-            updateDownloadButton();
+    // --- Upload Logic ---
+    function openUploadModal() {
+        filesToUpload = [];
+        document.getElementById('selected-files').innerHTML = '';
+        document.getElementById('upload-modal').classList.add('active');
+        fetchFolderList();
+    }
+
+    function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        const container = document.getElementById('selected-files');
+        files.forEach(f => {
+            filesToUpload.push(f);
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `<span>${f.name}</span><i class="fas fa-times" onclick="this.parentElement.remove(); filesToUpload=filesToUpload.filter(x=>x!==f);"></i>`;
+            container.appendChild(div);
         });
     }
 
-    function openPreviewById(id) {
-        const file = currentFiles.find(f => f.id === id);
-        if (file) openPreview(file);
-        else showToast('파일 정보 부족', 'error');
+    async function handleUpload() {
+        if (filesToUpload.length === 0) return showToast('파일을 선택하세요.', 'error');
+        
+        const isNewFolder = document.getElementById('create-folder-check').checked;
+        const targetDate = document.getElementById('target-date').value;
+        const targetName = document.getElementById('target-name').value;
+        
+        if (isNewFolder && (!targetDate || !targetName)) return showToast('날짜와 활동명을 입력하세요.', 'error');
+        
+        const folderNameForGAS = isNewFolder ? `${targetDate} ${targetName}` : "";
+        // 파일 이름 규칙: 활동명(숫자 제외) + 번호
+        const baseFileName = isNewFolder ? targetName : (document.getElementById('target-folder-select').selectedOptions[0].text.split(' ')[1] || '파일');
+        
+        let currentTargetId = document.getElementById('target-folder-select').value;
+        const btn = document.getElementById('upload-btn');
+        btn.disabled = true; btn.classList.add('btn-loading');
+        
+        document.getElementById('upload-progress').style.display = 'block';
+        const fill = document.getElementById('progress-fill');
+
+        for (let i = 0; i < filesToUpload.length; i++) {
+            const file = filesToUpload[i];
+            const ext = file.name.split('.').pop();
+            const newName = `${baseFileName}${i + 1}.${ext}`;
+            
+            try {
+                const base64 = await convertBase64(file);
+                const resp = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'upload',
+                        data: base64,
+                        fileName: newName,
+                        mimeType: file.type,
+                        targetFolderId: currentTargetId,
+                        newFolderName: i === 0 ? folderNameForGAS : ""
+                    })
+                });
+                const res = await resp.json();
+                if (i === 0 && res.folderId) currentTargetId = res.folderId;
+                fill.style.width = ((i + 1) / filesToUpload.length * 100) + '%';
+            } catch (e) { showToast(`${file.name} 업로드 실패`, 'error'); break; }
+        }
+
+        btn.disabled = false; btn.classList.remove('btn-loading');
+        showSuccessModal('완료', '업로드가 완료되었습니다.');
+        closeModal('upload-modal');
+        loadFolder(currentFolderId);
     }
 
-    // --- Drag to Select ---
+    // --- Drag Logic ---
     let isDragging = false;
     let startX, startY;
     const dragSelector = document.getElementById('drag-selector');
 
     document.addEventListener('mousedown', e => {
-        if (e.target.closest('.modal') || e.target.closest('header') || e.target.closest('.btn') || e.target.closest('.breadcrumb')) return;
+        if (e.target.closest('.modal') || e.target.closest('header') || e.target.closest('.btn')) return;
         if (!e.target.closest('.file-card') && !e.target.closest('.folder-card')) {
             selectedIds.clear();
-            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-            updateDownloadButton();
+            document.querySelectorAll('.selected').forEach(x => x.classList.remove('selected'));
+            updateToolbar();
         }
         if (e.button !== 0) return;
         isDragging = true;
-        document.body.classList.add('no-select');
-        startX = e.clientX;
-        startY = e.clientY;
-        dragSelector.style.left = startX + 'px';
-        dragSelector.style.top = startY + 'px';
-        dragSelector.style.width = '0px';
-        dragSelector.style.height = '0px';
+        startX = e.clientX; startY = e.clientY;
+        dragSelector.style.left = startX + 'px'; dragSelector.style.top = startY + 'px';
+        dragSelector.style.width = '0px'; dragSelector.style.height = '0px';
     });
 
     document.addEventListener('mousemove', e => {
         if (!isDragging) return;
-        const left = Math.min(startX, e.clientX);
-        const top = Math.min(startY, e.clientY);
-        const width = Math.abs(startX - e.clientX);
-        const height = Math.abs(startY - e.clientY);
+        const left = Math.min(startX, e.clientX); const top = Math.min(startY, e.clientY);
+        const width = Math.abs(startX - e.clientX); const height = Math.abs(startY - e.clientY);
         if (width > 5 || height > 5) {
             dragSelector.style.display = 'block';
-            dragSelector.style.left = left + 'px';
-            dragSelector.style.top = top + 'px';
-            dragSelector.style.width = width + 'px';
-            dragSelector.style.height = height + 'px';
-            checkSelection(left, top, width, height);
+            dragSelector.style.left = left + 'px'; dragSelector.style.top = top + 'px';
+            dragSelector.style.width = width + 'px'; dragSelector.style.height = height + 'px';
+            checkOverlap(left, top, width, height);
         }
     });
 
     document.addEventListener('mouseup', () => {
         isDragging = false;
-        document.body.classList.remove('no-select');
         dragSelector.style.display = 'none';
+        document.body.classList.remove('no-select');
     });
 
-    function checkSelection(sLeft, sTop, sWidth, sHeight) {
-        const cards = document.querySelectorAll('.file-card, .folder-card');
-        const sRight = sLeft + sWidth;
-        const sBottom = sTop + sHeight;
-        cards.forEach(card => {
-            const rect = card.getBoundingClientRect();
-            const isOverlap = !(rect.right < sLeft || rect.left > sRight || rect.bottom < sTop || rect.top > sBottom);
-            if (isOverlap && !selectedIds.has(card.dataset.id)) {
-                selectedIds.add(card.dataset.id);
-                card.classList.add('selected');
-            }
+    function checkOverlap(sL, sT, sW, sH) {
+        const cards = document.querySelectorAll('.folder-card, .file-card');
+        const sR = sL + sW; const sB = sT + sH;
+        cards.forEach(c => {
+            const r = c.getBoundingClientRect();
+            const overlap = !(r.right < sL || r.left > sR || r.bottom < sT || r.top > sB);
+            if (overlap) { selectedIds.add(c.dataset.id); c.classList.add('selected'); }
         });
-        updateDownloadButton();
+        updateToolbar();
     }
 
-    // --- Upload ---
-    function openUploadModal() {
-        resetUploadState();
-        document.getElementById('upload-modal').classList.add('active');
-    }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-    function toggleNewFolderInput() { 
-        const isChecked = document.getElementById('create-folder-check').checked;
-        document.getElementById('new-folder-input').style.display = isChecked ? 'block' : 'none';
-        document.getElementById('target-folder-select').disabled = isChecked;
-    }
-    function handleFileSelect(e) {
-        const files = Array.from(e.target.files);
-        appendFiles(files);
-    }
-    function appendFiles(files) {
-        const container = document.getElementById('selected-files');
-        files.forEach(file => {
-            filesToUpload.push(file);
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.innerHTML = `<span>${file.name}</span><i class="fas fa-times" style="cursor:pointer;" onclick="removeFile(this, '${file.name}')"></i>`;
-            container.appendChild(div);
-        });
-    }
-    function removeFile(el, name) {
-        filesToUpload = filesToUpload.filter(f => f.name !== name);
-        el.parentElement.remove();
-    }
-    async function handleUpload() {
-        if (filesToUpload.length === 0) return showToast('파일을 선택하세요.', 'error');
-        const btn = document.getElementById('upload-btn');
-        const isNewFolder = document.getElementById('create-folder-check').checked;
-        const targetDate = document.getElementById('target-date').value;
-        const targetName = document.getElementById('target-name').value;
-        if (isNewFolder && (!targetDate || !targetName)) return showToast('날짜와 활동명을 입력하세요.', 'error');
-        const finalFolderName = isNewFolder ? `${targetDate} ${targetName}` : "";
-        let currentTargetId = document.getElementById('target-folder-select').value;
-        btn.disabled = true;
-        btn.classList.add('btn-loading');
-        showProgress(true);
-        for (let i = 0; i < filesToUpload.length; i++) {
-            const file = filesToUpload[i];
-            updateProgress(i, filesToUpload.length, 0, file.name);
-            try {
-                const base64Data = await convertToBase64(file);
-                const resp = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'upload', data: base64Data, fileName: file.name, mimeType: file.type, targetFolderId: currentTargetId, newFolderName: i === 0 ? finalFolderName : "" })
-                });
-                const result = await resp.json();
-                if (i === 0 && result.folderId) currentTargetId = result.folderId;
-                updateProgress(i + 1, filesToUpload.length, 100, file.name);
-            } catch (err) { break; }
-        }
-        btn.disabled = false;
-        btn.classList.remove('btn-loading');
-        showSuccessModal('업로드 완료', '성공적으로 저장되었습니다.');
-        closeModal('upload-modal');
-        loadFolder(currentFolderId);
-    }
-    function convertToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = e => reject(e);
-        });
-    }
-    function openPreview(file) {
-        const container = document.getElementById('preview-container');
-        container.innerHTML = file.isVideo ? `<iframe src="${file.previewUrl}" width="800" height="450" frameborder="0"></iframe>` : `<img src="${file.previewUrl}">`;
-        document.getElementById('preview-modal').classList.add('active');
-    }
-    function promptDelete(id, type) { itemToDelete = { id, type }; document.getElementById('password-modal').classList.add('active'); }
-    async function confirmDelete() {
-        const password = document.getElementById('admin-password').value;
-        if (!password) return showToast('비밀번호 필수', 'error');
-        showLoader(true);
-        try {
-            const resp = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', itemId: itemToDelete.id, itemType: itemToDelete.type, password: password }) });
-            const result = await resp.json();
-            if (result.success) { showToast('삭제됨', 'success'); closeModal('password-modal'); loadFolder(currentFolderId); }
-            else showToast(result.error, 'error');
-        } finally { showLoader(false); }
-    }
-    function updateBreadcrumbs(data) {
-        const bc = document.getElementById('breadcrumb');
-        bc.innerHTML = `<span><a href="#" onclick="loadFolder(null)">Home</a></span>`;
-    }
-    function showToast(m, t = 'info') {
-        const c = document.getElementById('toast-container');
+    // --- Helpers ---
+    function showLoader(s) { document.getElementById('loader').style.display = s ? 'block' : 'none'; }
+    function showToast(m, t) {
+        const container = document.getElementById('toast-container');
         const div = document.createElement('div');
         div.className = `toast ${t}`;
-        div.innerHTML = `<span>${m}</span>`;
-        c.appendChild(div);
+        div.innerHTML = `<i class="fas fa-info-circle"></i><span>${m}</span>`;
+        container.appendChild(div);
         setTimeout(() => div.remove(), 3000);
     }
-    function showProgress(s) { document.getElementById('upload-progress').style.display = s ? 'block' : 'none'; }
-    function updateProgress(d, t, p, n) {
-        document.getElementById('progress-fill').style.width = Math.floor(((d / t) * 100)) + '%';
-        document.getElementById('progress-text').innerText = `${n} (${d}/${t})`;
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function showSuccessModal(t, m) {
+        document.getElementById('success-title').innerText = t;
+        document.getElementById('success-msg').innerText = m;
+        document.getElementById('success-modal').classList.add('active');
     }
-    function resetUploadState() { filesToUpload = []; document.getElementById('selected-files').innerHTML = ''; }
-
-    // --- Added Missing Helpers ---
-    function showLoader(show) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = show ? 'block' : 'none';
-    }
-
-    function showSuccessModal(title, msg) {
-        const modal = document.getElementById('success-modal');
-        if (modal) {
-            document.getElementById('success-title').innerText = title;
-            document.getElementById('success-msg').innerHTML = msg;
-            modal.classList.add('active');
-        }
-    }
-
-    function showCustomConfirm(title, msg, onConfirm) {
-        const modal = document.getElementById('confirm-modal');
-        if (modal) {
-            document.getElementById('confirm-title').innerText = title;
-            document.getElementById('confirm-msg').innerHTML = msg;
-            const okBtn = document.getElementById('confirm-ok-btn');
-            okBtn.onclick = () => {
-                modal.classList.remove('active');
-                onConfirm();
-            };
-            modal.classList.add('active');
-        }
-    }
-
-    function showCustomPrompt(title, msg, defaultValue, onConfirm) {
+    function showCustomPrompt(t, m, v, cb) {
         const modal = document.getElementById('prompt-modal');
-        if (modal) {
-            document.getElementById('prompt-title').innerText = title;
-            document.getElementById('prompt-msg').innerHTML = msg;
-            const input = document.getElementById('prompt-input');
-            input.value = defaultValue;
-            const okBtn = document.getElementById('prompt-ok-btn');
-            okBtn.onclick = () => {
-                modal.classList.remove('active');
-                onConfirm(input.value);
-            };
-            modal.classList.add('active');
-            setTimeout(() => input.focus(), 100);
-        }
+        document.getElementById('prompt-title').innerText = t;
+        document.getElementById('prompt-msg').innerText = m;
+        const input = document.getElementById('prompt-input');
+        input.value = v;
+        document.getElementById('prompt-ok-btn').onclick = () => { closeModal('prompt-modal'); cb(input.value); };
+        modal.classList.add('active');
+    }
+    function toggleNewFolderInput() {
+        const chk = document.getElementById('create-folder-check').checked;
+        document.getElementById('new-folder-input').style.display = chk ? 'block' : 'none';
+        document.getElementById('target-folder-select').disabled = chk;
+    }
+    function convertBase64(file) {
+        return new Promise((r, j) => {
+            const rd = new FileReader();
+            rd.readAsDataURL(file);
+            rd.onload = () => r(rd.result);
+            rd.onerror = e => j(e);
+        });
+    }
+    function openPreview(f) {
+        const container = document.getElementById('preview-container');
+        container.innerHTML = f.isVideo ? `<iframe src="${f.previewUrl}" style="width:80vw; height:80vh; border:none;"></iframe>` : `<img src="${f.previewUrl}" style="max-width:100%; max-height:80vh; border-radius:var(--radius-md); box-shadow:var(--shadow-lg);">`;
+        document.getElementById('preview-modal').classList.add('active');
     }
 </script>
 </body>
