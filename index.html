@@ -846,8 +846,17 @@
         const rBtn = document.getElementById('multi-delete-btn');
         
         const count = selectedIds.size;
+        
+        // 선택된 항목 중 폴더가 있는지 확인
+        let hasFolder = false;
+        const selectedElements = document.querySelectorAll('.selected');
+        selectedElements.forEach(el => {
+            if (el.classList.contains('folder-card')) hasFolder = true;
+        });
+
         if (count > 0) {
-            dBtn.style.display = 'inline-flex';
+            // 폴더가 포함되어 있으면 직접 다운로드는 숨기고 ZIP 압축만 노정
+            dBtn.style.display = hasFolder ? 'none' : 'inline-flex';
             zBtn.style.display = 'inline-flex';
             rBtn.style.display = 'inline-flex';
         } else {
