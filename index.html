@@ -55,6 +55,39 @@
         }
 
         /* Layout */
+        body.no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .modal-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+
+        .modal-content p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .prompt-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
         header {
             position: sticky;
             top: 0;
@@ -908,68 +941,67 @@
     async function downloadAsZip() {
         if (selectedFileIds.size === 0) return;
         
-        const zipName = prompt("압축 파일 이름을 입력하세요:", "haju_photos");
-        if (zipName === null) return;
-
-        showLoader(true);
-        showToast('서버에서 압축 중입니다. 잠시만 기다려 주세요...', 'info');
-
-        try {
-            const resp = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'getZip',
-                    itemIds: Array.from(selectedFileIds),
-                    zipName: zipName
-                })
-            });
-            const result = await resp.json();
+        showCustomPrompt("ZIP 압축 다운로드", "압축 파일 이름을 입력하세요:", "haju_photos", async (zipName) => {
+            if (!zipName) return;
             
-            if (result.success) {
-                showToast('압축 완료! 다운로드를 시작합니다.', 'success');
-                const link = document.createElement('a');
-                link.href = result.downloadUrl;
-                link.click();
+            showLoader(true);
+            showToast('서버에서 압축 중입니다. 잠시만 기다려 주세요...', 'info');
+
+            try {
+                const resp = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'getZip',
+                        itemIds: Array.from(selectedFileIds),
+                        zipName: zipName
+                    })
+                });
+                const result = await resp.json();
                 
-                selectedFileIds.clear();
-                document.querySelectorAll('.file-card.selected').forEach(el => el.classList.remove('selected'));
-                updateDownloadButton();
-            } else {
-                showToast(result.error, 'error');
+                if (result.success) {
+                    showToast('압축 완료! 다운로드를 시작합니다.', 'success');
+                    const link = document.createElement('a');
+                    link.href = result.downloadUrl;
+                    link.click();
+                    
+                    selectedFileIds.clear();
+                    document.querySelectorAll('.file-card.selected').forEach(el => el.classList.remove('selected'));
+                    updateDownloadButton();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (err) {
+                showToast('압축 요청 중 오류가 발생했습니다.', 'error');
+            } finally {
+                showLoader(false);
             }
-        } catch (err) {
-            showToast('압축 요청 중 오류가 발생했습니다.', 'error');
-        } finally {
-            showLoader(false);
-        }
+        });
     }
 
     async function downloadSelected() {
         if (selectedFileIds.size === 0) return;
         
-        const confirmed = confirm(`${selectedFileIds.size}개의 파일을 다운로드하시겠습니까? 브라우저에서 여러 파일 다운로드 권한을 요청할 수 있습니다.`);
-        if (!confirmed) return;
+        showCustomConfirm("다운로드 확인", `${selectedFileIds.size}개의 파일을 다운로드하시겠습니까?<br><small style="color:red">* 브라우저에서 여러 파일 다운로드 권한 요청 시 '허용'을 눌러주세요.</small>`, async () => {
+            const ids = Array.from(selectedFileIds);
+            showToast(`${ids.length}개 파일 다운로드 시작...`, 'info');
 
-        const ids = Array.from(selectedFileIds);
-        showToast(`${ids.length}개 파일 다운로드 시작...`, 'info');
-
-        for (const id of ids) {
-            const url = `https://drive.google.com/uc?export=download&id=${id}`;
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', ''); // Suggested but actual download depends on headers
-            link.target = '_blank'; // Required to trigger multiple downloads in many browsers
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            for (const id of ids) {
+                const url = `https://drive.google.com/uc?export=download&id=${id}`;
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', '');
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                await new Promise(r => setTimeout(r, 400));
+            }
             
-            // Small delay to prevent browser from blocking too many simultaneous requests
-            await new Promise(r => setTimeout(r, 400));
-        }
-        
-        selectedFileIds.clear();
-        document.querySelectorAll('.file-card.selected').forEach(el => el.classList.remove('selected'));
-        updateDownloadButton();
+            selectedFileIds.clear();
+            document.querySelectorAll('.file-card.selected').forEach(el => el.classList.remove('selected'));
+            updateDownloadButton();
+        });
     }
 
     function openPreviewById(id) {
@@ -991,19 +1023,13 @@
         if (e.button !== 0) return; // Left click only
 
         isDragging = true;
+        document.body.classList.add('no-select');
         startX = e.clientX;
         startY = e.clientY;
         dragSelector.style.left = startX + 'px';
         dragSelector.style.top = startY + 'px';
         dragSelector.style.width = '0px';
         dragSelector.style.height = '0px';
-        
-        // Ctrl이나 Shift 안 누르면 기존 선택 해제 (선택 사항)
-        if (!e.ctrlKey && !e.shiftKey) {
-            // selectedFileIds.clear();
-            // document.querySelectorAll('.file-card.selected').forEach(el => el.classList.remove('selected'));
-            // updateDownloadButton();
-        }
     });
 
     document.addEventListener('mousemove', e => {
@@ -1030,6 +1056,7 @@
 
     document.addEventListener('mouseup', () => {
         isDragging = false;
+        document.body.classList.remove('no-select');
         dragSelector.style.display = 'none';
     });
 
@@ -1287,8 +1314,33 @@
 
     function showSuccessModal(title, msg) {
         document.getElementById('success-title').innerText = title;
-        document.getElementById('success-msg').innerText = msg;
+        document.getElementById('success-msg').innerHTML = msg;
         document.getElementById('success-modal').classList.add('active');
+    }
+
+    function showCustomConfirm(title, msg, onConfirm) {
+        document.getElementById('confirm-title').innerText = title;
+        document.getElementById('confirm-msg').innerHTML = msg;
+        const okBtn = document.getElementById('confirm-ok-btn');
+        okBtn.onclick = () => {
+            closeModal('confirm-modal');
+            onConfirm();
+        };
+        document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    function showCustomPrompt(title, msg, defaultValue, onConfirm) {
+        document.getElementById('prompt-title').innerText = title;
+        document.getElementById('prompt-msg').innerHTML = msg;
+        const input = document.getElementById('prompt-input');
+        input.value = defaultValue;
+        const okBtn = document.getElementById('prompt-ok-btn');
+        okBtn.onclick = () => {
+            closeModal('prompt-modal');
+            onConfirm(input.value);
+        };
+        document.getElementById('prompt-modal').classList.add('active');
+        setTimeout(() => input.focus(), 100);
     }
 
     function showLoader(show) {
