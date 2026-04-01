@@ -803,13 +803,21 @@
         const fileList = document.getElementById('files-list');
         folderList.innerHTML = '';
         fileList.innerHTML = '';
-        currentFiles = data.files;
+        
+        // 데이터 유효성 검사 (서버 오류 시 대응)
+        if (!data || data.success === false) {
+            fileList.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:#ef4444;">${data ? (data.error || '알 수 없는 오류') : '데이터를 불러오지 못했습니다.'}</div>`;
+            return;
+        }
 
-        if (data.folders.length === 0) {
+        currentFiles = data.files || [];
+        const folders = data.folders || [];
+
+        if (folders.length === 0) {
             document.getElementById('folders-section').style.display = 'none';
         } else {
             document.getElementById('folders-section').style.display = 'block';
-            data.folders.forEach(f => {
+            folders.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'folder-card';
                 card.dataset.id = f.id;
@@ -820,10 +828,10 @@
             });
         }
 
-        if (data.files.length === 0 && data.folders.length === 0) {
+        if (currentFiles.length === 0 && folders.length === 0) {
             fileList.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted);">표시할 내용이 없습니다.</div>';
         } else {
-            data.files.forEach(f => {
+            currentFiles.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'file-card';
                 card.dataset.id = f.id;
