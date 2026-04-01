@@ -737,7 +737,7 @@
 <div id="toast-container"></div>
 
 <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzynRIlDMKyrZ5LY2xxTHXkwJjQnLcZc1Wjlk6nBtetJIsbAMHmzl3s-PlXNgJAz7w/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyNfCZOdlmahXU-g1jrSE5Q2H3TGkzdZ4fUuC5mC8xK1c8HkCmVgki1_bCumSdAodA/exec';
     
     let currentFolderId = null;
     let currentFolderName = "Home";
@@ -946,13 +946,21 @@
                 });
                 const result = await resp.json();
                 if (result.success) {
+                    // 구글 드라이브 직접 다운로드 URL (uc?export=download)
                     const downloadUrl = `https://docs.google.com/uc?export=download&id=${result.fileId}`;
-                    const link = document.createElement('a');
-                    link.href = downloadUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    showToast('압축 완료! 다운로드가 시작됩니다.', 'success');
+                    
+                    // 새 창이나 탭으로 다운로드 실행 (브라우저 차단 방보)
+                    const win = window.open(downloadUrl, '_blank');
+                    if (!win) {
+                        // 팝업이 차단된 경우 수동 링크 클릭
+                        const link = document.createElement('a');
+                        link.href = downloadUrl;
+                        link.download = zipName + ".zip";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                    showToast('압축이 완료되었습니다! 다운로드가 시작됩니다.', 'success');
                 } else { 
                     let errMsg = result.error;
                     if (errMsg.includes("Access Denied") || errMsg.includes("권한")) {
