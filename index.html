@@ -759,6 +759,7 @@
             const resp = await fetch(`${GAS_URL}?action=getFiles&folderId=${folderId || ''}`);
             const data = await resp.json();
             renderContent(data);
+            updateBreadcrumbs(data.path); // 경로 데이터로 브레드크럼 업데이트
             currentFolderId = data.currentFolderId;
             currentFolderName = data.currentFolderName || "Home";
             
@@ -766,6 +767,19 @@
             if (data.driveUrl) { driveBtn.href = data.driveUrl; driveBtn.style.display = 'inline-flex'; }
             else { driveBtn.style.display = 'none'; }
         } finally { showLoader(false); }
+    }
+
+    function updateBreadcrumbs(path) {
+        const bc = document.getElementById('breadcrumb');
+        if (!path || path.length === 0) {
+            bc.innerHTML = `<span><a href="#" onclick="loadFolder(null)">Home</a></span>`;
+            return;
+        }
+        bc.innerHTML = path.map((p, i) => {
+            const isLast = i === path.length - 1;
+            if (isLast) return `<span class="active">${p.name}</span>`;
+            return `<span><a href="#" onclick="loadFolder('${p.id || ''}')">${p.name}</a></span>`;
+        }).join('');
     }
 
     async function fetchFolderList() {
@@ -1054,7 +1068,12 @@
         cards.forEach(c => {
             const r = c.getBoundingClientRect();
             const overlap = !(r.right < sL || r.left > sR || r.bottom < sT || r.top > sB);
-            if (overlap) { selectedIds.add(c.dataset.id); c.classList.add('selected'); }
+            const id = c.dataset.id;
+            // 유효한 ID가 있는 카드만 선택에 추가
+            if (overlap && id && id.length > 5) { 
+                selectedIds.add(id); 
+                c.classList.add('selected'); 
+            }
         });
         updateToolbar();
     }
