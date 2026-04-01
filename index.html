@@ -938,19 +938,31 @@
             try {
                 const resp = await fetch(GAS_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'getZip', itemIds: Array.from(selectedIds), zipName: zipName })
+                    body: JSON.stringify({ 
+                        action: 'getZip', 
+                        itemIds: Array.from(selectedIds), 
+                        zipName: zipName 
+                    })
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    // 구글 드라이브 직접 다운로드 URL 생성 (uc?export=download&id=...)
                     const downloadUrl = `https://docs.google.com/uc?export=download&id=${result.fileId}`;
                     const link = document.createElement('a');
                     link.href = downloadUrl;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                    showToast('압축 완료! 내 컴퓨터로 전송합니다.', 'success');
-                } else { showToast(result.error, 'error'); }
+                    showToast('압축 완료! 다운로드가 시작됩니다.', 'success');
+                } else { 
+                    let errMsg = result.error;
+                    if (errMsg.includes("Access Denied") || errMsg.includes("권한")) {
+                        errMsg = "액세스 거부: GAS 에디터에서 [새 배포]를 진행하고 권한을 다시 승인해 주세요.";
+                    } else if (result.debug) {
+                        errMsg += ` (상세: ${result.debug})`;
+                    }
+                    showToast(errMsg, 'error'); 
+                    console.error("ZIP 에러 상세:", result.debug || result.error);
+                }
             } finally { showLoader(false); }
         });
     }
