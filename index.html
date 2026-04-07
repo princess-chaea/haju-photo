@@ -745,21 +745,53 @@
     let currentFiles = [];
     let filesToUpload = [];
 
+    // Caching for performance
+    const contentCache = new Map(); // key: folderId, value: folder data
+    let folderListCache = null; // cached getAllFolders response
+
     window.onload = () => {
         loadFolder(null);
         fetchFolderList();
     };
 
     async function loadFolder(folderId) {
-        showLoader(true);
         selectedIds.clear();
         currentFiles = [];
         updateToolbar();
+
+        // Check cache first
+        const cacheKey = folderId || 'root';
+        if (contentCache.has(cacheKey)) {
+            const cachedData = contentCache.get(cacheKey);
+            renderContent(cachedData);
+            updateBreadcrumbs(cachedData.path);
+            currentFolderId = cachedData.currentFolderId;
+            currentFolderName = cachedData.currentFolderName || "Home";
+            
+            const driveBtn = document.getElementById('drive-link');
+            if (cachedData.driveUrl) { driveBtn.href = cachedData.driveUrl; driveBtn.style.display = 'inline-flex'; }
+            else { driveBtn.style.display = 'none'; }
+            
+            // Still fetch in background to keep data fresh (silent refresh)
+             fetchFolderData(folderId);
+             return;
+        }
+
+        await fetchFolderData(folderId);
+    }
+
+    async function fetchFolderData(folderId) {
+        showLoader(true);
         try {
             const resp = await fetch(`${GAS_URL}?action=getFiles&folderId=${folderId || ''}`);
             const data = await resp.json();
+            
+            // Update cache
+            const cacheKey = folderId || 'root';
+            contentCache.set(cacheKey, data);
+            
             renderContent(data);
-            updateBreadcrumbs(data.path); // 경로 데이터로 브레드크럼 업데이트
+            updateBreadcrumbs(data.path);
             currentFolderId = data.currentFolderId;
             currentFolderName = data.currentFolderName || "Home";
             
@@ -783,19 +815,29 @@
     }
 
     async function fetchFolderList() {
+        if (folderListCache) {
+            renderFolderOptions(folderListCache);
+            return;
+        }
+
         try {
             const resp = await fetch(`${GAS_URL}?action=getAllFolders`);
             const folders = await resp.json();
-            const select = document.getElementById('target-folder-select');
-            select.innerHTML = '<option value="">(최상위 폴더)</option>';
-            folders.forEach(f => {
-                const opt = document.createElement('option');
-                opt.value = f.id;
-                opt.innerText = f.name;
-                if (f.id === currentFolderId) opt.selected = true;
-                select.appendChild(opt);
-            });
+            folderListCache = folders;
+            renderFolderOptions(folders);
         } catch (e) {}
+    }
+
+    function renderFolderOptions(folders) {
+        const select = document.getElementById('target-folder-select');
+        select.innerHTML = '<option value="">(최상위 폴더)</option>';
+        folders.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.innerText = f.name;
+            if (f.id === currentFolderId) opt.selected = true;
+            select.appendChild(opt);
+        });
     }
 
     function renderContent(data) {
@@ -855,7 +897,10 @@
     }
 
     function selectAll() {
-        const cards = document.querySelectorAll('.folder-card, .file-card');
+        // Only select photos and videos (file-cards) as requested
+        const cards = document.querySelectorAll('.file-card');
+        if (cards.length === 0) return;
+        
         const allSelected = Array.from(cards).every(c => selectedIds.has(c.dataset.id));
         cards.forEach(c => {
             if (allSelected) { selectedIds.delete(c.dataset.id); c.classList.remove('selected'); }
@@ -912,6 +957,10 @@
             });
             const result = await resp.json();
             if (result.success) {
+                // Clear cache when items are deleted
+                contentCache.delete(currentFolderId || 'root');
+                folderListCache = null; // Folder list might have changed if folder was deleted
+                
                 showToast(result.message || '삭제되었습니다.', 'success');
                 closeModal('password-modal');
                 loadFolder(currentFolderId);
@@ -1048,6 +1097,11 @@
         }
 
         btn.disabled = false; btn.classList.remove('btn-loading');
+        
+        // Clear cache for the target folder and folder list
+        contentCache.delete(currentTargetId || 'root');
+        folderListCache = null;
+        
         showSuccessModal('완료', '업로드가 완료되었습니다.');
         closeModal('upload-modal');
         loadFolder(currentFolderId);
