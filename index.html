@@ -773,15 +773,15 @@
             else { driveBtn.style.display = 'none'; }
             
             // Still fetch in background to keep data fresh (silent refresh)
-             fetchFolderData(folderId);
+             fetchFolderData(folderId, true);
              return;
         }
 
-        await fetchFolderData(folderId);
+        await fetchFolderData(folderId, false);
     }
 
-    async function fetchFolderData(folderId) {
-        showLoader(true);
+    async function fetchFolderData(folderId, isSilent) {
+        if (!isSilent) showLoader(true);
         try {
             const resp = await fetch(`${GAS_URL}?action=getFiles&folderId=${folderId || ''}`);
             const data = await resp.json();
@@ -798,7 +798,7 @@
             const driveBtn = document.getElementById('drive-link');
             if (data.driveUrl) { driveBtn.href = data.driveUrl; driveBtn.style.display = 'inline-flex'; }
             else { driveBtn.style.display = 'none'; }
-        } finally { showLoader(false); }
+        } finally { if (!isSilent) showLoader(false); }
     }
 
     function updateBreadcrumbs(path) {
