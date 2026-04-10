@@ -653,20 +653,6 @@
         <p>활동명에 맞춰 파일 이름이 **활동명1, 활동명2...**로 자동 변경됩니다.</p>
         
         <div class="form-group" style="margin-bottom:1.5rem;">
-            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">학년 선택</label>
-            <select id="grade-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
-                <option value="초1">초1</option>
-                <option value="초2">초2</option>
-                <option value="초3">초3</option>
-                <option value="초4">초4</option>
-                <option value="초5">초5</option>
-                <option value="초6">초6</option>
-                <option value="유치원">유치원</option>
-                <option value="어울림반">어울림반</option>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:1.5rem;">
             <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">업로드 위치 선택</label>
             <select id="target-folder-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;"></select>
         </div>
@@ -684,6 +670,21 @@
                 <input type="text" id="target-name" class="form-input" placeholder="활동명(과학행사)" style="flex:1; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
             </div>
             <div id="date-error" class="input-error-msg" style="display: none;">날짜는 숫자 4자리로 입력해 주세요. (예: 0412)</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1.5rem;">
+            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">학년 선택</label>
+            <select id="grade-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
+                <option value="">없음</option>
+                <option value="초1">초1</option>
+                <option value="초2">초2</option>
+                <option value="초3">초3</option>
+                <option value="초4">초4</option>
+                <option value="초5">초5</option>
+                <option value="초6">초6</option>
+                <option value="유치원">유치원</option>
+                <option value="어울림반">어울림반</option>
+            </select>
         </div>
         
         <div class="upload-area" onclick="document.getElementById('file-input').click()">
@@ -1103,7 +1104,7 @@
             const parts = folderText.trim().split(' ');
             activityName = parts[parts.length - 1] || '파일';
         }
-        const baseFileName = `${grade}_${activityName}`;
+        const baseFileName = grade ? `${grade}_${activityName}` : activityName;
         
         let currentTargetId = document.getElementById('target-folder-select').value;
         const btn = document.getElementById('upload-btn');
