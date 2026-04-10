@@ -414,9 +414,10 @@
             backdrop-filter: blur(4px);
             z-index: 2000;
             display: none;
-            align-items: center;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+            align-items: flex-start;
             justify-content: center;
-            padding: 1rem;
         }
 
         .modal.active {
@@ -437,6 +438,7 @@
             max-width: 600px;
             box-shadow: var(--shadow-lg);
             position: relative;
+            margin: auto;
         }
 
         .modal-content h3 {
@@ -1108,36 +1110,44 @@
         
         let currentTargetId = document.getElementById('target-folder-select').value;
         const btn = document.getElementById('upload-btn');
-        btn.disabled = true; btn.classList.add('btn-loading');
+        const modalInputs = document.querySelectorAll('#upload-modal input, #upload-modal select, #upload-modal .btn');
+        
+        // Disable all inputs to prevent accidental changes
+        modalInputs.forEach(el => el.disabled = true);
+        btn.classList.add('btn-loading');
         
         document.getElementById('upload-progress').style.display = 'block';
         const fill = document.getElementById('progress-fill');
 
-        for (let i = 0; i < filesToUpload.length; i++) {
-            const file = filesToUpload[i];
-            const ext = file.name.split('.').pop();
-            const newName = `${baseFileName}${i + 1}.${ext}`;
-            
-            try {
-                const base64 = await convertBase64(file);
-                const resp = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'upload',
-                        data: base64,
-                        fileName: newName,
-                        mimeType: file.type,
-                        targetFolderId: currentTargetId,
-                        newFolderName: i === 0 ? folderNameForGAS : ""
-                    })
-                });
-                const res = await resp.json();
-                if (i === 0 && res.folderId) currentTargetId = res.folderId;
-                fill.style.width = ((i + 1) / filesToUpload.length * 100) + '%';
-            } catch (e) { showToast(`${file.name} 업로드 실패`, 'error'); break; }
+        try {
+            for (let i = 0; i < filesToUpload.length; i++) {
+                const file = filesToUpload[i];
+                const ext = file.name.split('.').pop();
+                const newName = `${baseFileName}${i + 1}.${ext}`;
+                
+                try {
+                    const base64 = await convertBase64(file);
+                    const resp = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'upload',
+                            data: base64,
+                            fileName: newName,
+                            mimeType: file.type,
+                            targetFolderId: currentTargetId,
+                            newFolderName: i === 0 ? folderNameForGAS : ""
+                        })
+                    });
+                    const res = await resp.json();
+                    if (i === 0 && res.folderId) currentTargetId = res.folderId;
+                    fill.style.width = ((i + 1) / filesToUpload.length * 100) + '%';
+                } catch (e) { showToast(`${file.name} 업로드 실패`, 'error'); break; }
+            }
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+            modalInputs.forEach(el => el.disabled = false);
         }
-
-        btn.disabled = false; btn.classList.remove('btn-loading');
         
         // Clear cache for the target folder and folder list
         contentCache.delete(currentTargetId || 'root');
