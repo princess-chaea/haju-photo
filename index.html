@@ -765,6 +765,7 @@
 
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyNfCZOdlmahXU-g1jrSE5Q2H3TGkzdZ4fUuC5mC8xK1c8HkCmVgki1_bCumSdAodA/exec';
+    const ADMIN_PASS = 'haju1234';
     
     let currentFolderId = null;
     let currentFolderName = "Home";
@@ -1199,24 +1200,39 @@
         
         if (confirm("업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
             isCancelled = true;
+            showLoader(true);
+            showToast("중단 및 자동 삭제 중...", "info");
             
-            if (uploadedItemIds.length > 0 || createdFolderId) {
-                // 삭제를 위해 비밀번호 입력 모달 호출
-                showToast("업로드를 중단합니다. 삭제를 위해 관리자 비밀번호가 필요합니다.", "info");
-                closeModal('upload-modal');
-                
-                // 삭제할 항목 결정 (새 폴더가 생성되었다면 폴더만 삭제하는 것이 효율적)
-                const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
-                
-                selectedIds.clear();
-                itemsToDelete.forEach(id => selectedIds.add(id));
-                
-                document.getElementById('admin-password').value = '';
-                document.getElementById('password-modal').classList.add('active');
+            closeModal('upload-modal');
+            
+            // 삭제할 항목 결정 (새 폴더가 생성되었다면 폴더만 삭제하는 것이 효율적)
+            const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
+            
+            if (itemsToDelete.length > 0) {
+                try {
+                    const resp = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'delete',
+                            itemIds: itemsToDelete,
+                            password: ADMIN_PASS
+                        })
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        showToast("중단 및 청소가 완료되었습니다.", "success");
+                    } else {
+                        showToast("청소 실패: " + result.error, "error");
+                    }
+                } catch (e) {
+                    showToast("삭제 중 오류가 발생했습니다.", "error");
+                }
             } else {
                 showToast("업로드가 중단되었습니다.", "info");
-                closeModal('upload-modal');
             }
+            
+            showLoader(false);
+            loadFolder(currentFolderId);
         }
     }
 
