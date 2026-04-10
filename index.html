@@ -702,7 +702,7 @@
         </div>
         
         <div style="display: flex; gap: 1rem; margin-top:2rem;">
-            <button class="btn btn-outline" style="flex: 1" onclick="closeModal('upload-modal')">취소</button>
+            <button id="cancel-upload-btn" class="btn btn-outline" style="flex: 1" onclick="handleUploadCancel()">취소</button>
             <button id="upload-btn" class="btn btn-primary" style="flex: 1" onclick="handleUpload()">업로드 시작</button>
         </div>
     </div>
@@ -771,6 +771,12 @@
     let selectedIds = new Set();
     let currentFiles = [];
     let filesToUpload = [];
+
+    // 업로드 중단 관련 상태
+    let isUploading = false;
+    let isCancelled = false;
+    let uploadedItemIds = [];
+    let createdFolderId = null;
 
     // Caching for performance
     const contentCache = new Map(); // key: folderId, value: folder data
@@ -1111,9 +1117,18 @@
         let currentTargetId = document.getElementById('target-folder-select').value;
         const btn = document.getElementById('upload-btn');
         const modalInputs = document.querySelectorAll('#upload-modal input, #upload-modal select, #upload-modal .btn');
+        const cancelBtn = document.getElementById('cancel-upload-btn');
         
-        // Disable all inputs to prevent accidental changes
-        modalInputs.forEach(el => el.disabled = true);
+        // 상태 초기화
+        isUploading = true;
+        isCancelled = false;
+        uploadedItemIds = [];
+        createdFolderId = null;
+        
+        // 입력 비활성화 (취소 버튼 제외)
+        modalInputs.forEach(el => {
+            if (el.id !== 'cancel-upload-btn') el.disabled = true;
+        });
         btn.classList.add('btn-loading');
         
         document.getElementById('upload-progress').style.display = 'block';
@@ -1121,6 +1136,8 @@
 
         try {
             for (let i = 0; i < filesToUpload.length; i++) {
+                if (isCancelled) break;
+                
                 const file = filesToUpload[i];
                 const ext = file.name.split('.').pop();
                 const newName = `${baseFileName}${i + 1}.${ext}`;
@@ -1139,23 +1156,68 @@
                         })
                     });
                     const res = await resp.json();
-                    if (i === 0 && res.folderId) currentTargetId = res.folderId;
+                    
+                    if (res.success) {
+                        uploadedItemIds.push(res.fileId);
+                        if (i === 0 && res.folderId) {
+                            currentTargetId = res.folderId;
+                            if (isNewFolder) createdFolderId = res.folderId;
+                        }
+                    } else {
+                        throw new Error(res.error);
+                    }
+                    
                     fill.style.width = ((i + 1) / filesToUpload.length * 100) + '%';
-                } catch (e) { showToast(`${file.name} 업로드 실패`, 'error'); break; }
+                } catch (e) { 
+                    showToast(`${file.name} 업로드 실패: ${e.message}`, 'error'); 
+                    if (!confirm(`${file.name} 업로드에 실패했습니다. 계속하시겠습니까?`)) break;
+                }
+            }
+            
+            if (!isCancelled) {
+                showSuccessModal('완료', '업로드가 완료되었습니다.');
+                closeModal('upload-modal');
+                loadFolder(currentFolderId);
             }
         } finally {
+            isUploading = false;
             btn.disabled = false;
             btn.classList.remove('btn-loading');
             modalInputs.forEach(el => el.disabled = false);
+            
+            // Clear cache for the target folder and folder list
+            contentCache.delete(currentTargetId || 'root');
+            folderListCache = null;
+        }
+    }
+
+    async function handleUploadCancel() {
+        if (!isUploading) {
+            closeModal('upload-modal');
+            return;
         }
         
-        // Clear cache for the target folder and folder list
-        contentCache.delete(currentTargetId || 'root');
-        folderListCache = null;
-        
-        showSuccessModal('완료', '업로드가 완료되었습니다.');
-        closeModal('upload-modal');
-        loadFolder(currentFolderId);
+        if (confirm("업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
+            isCancelled = true;
+            
+            if (uploadedItemIds.length > 0 || createdFolderId) {
+                // 삭제를 위해 비밀번호 입력 모달 호출
+                showToast("업로드를 중단합니다. 삭제를 위해 관리자 비밀번호가 필요합니다.", "info");
+                closeModal('upload-modal');
+                
+                // 삭제할 항목 결정 (새 폴더가 생성되었다면 폴더만 삭제하는 것이 효율적)
+                const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
+                
+                selectedIds.clear();
+                itemsToDelete.forEach(id => selectedIds.add(id));
+                
+                document.getElementById('admin-password').value = '';
+                document.getElementById('password-modal').classList.add('active');
+            } else {
+                showToast("업로드가 중단되었습니다.", "info");
+                closeModal('upload-modal');
+            }
+        }
     }
 
     // --- Drag Logic ---
