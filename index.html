@@ -592,6 +592,13 @@
 
         .toast.success { border-left-color: #10b981; }
         .toast.error { border-left-color: #ef4444; }
+
+        .input-error-msg {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -646,6 +653,20 @@
         <p>활동명에 맞춰 파일 이름이 **활동명1, 활동명2...**로 자동 변경됩니다.</p>
         
         <div class="form-group" style="margin-bottom:1.5rem;">
+            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">학년 선택</label>
+            <select id="grade-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
+                <option value="초1">초1</option>
+                <option value="초2">초2</option>
+                <option value="초3">초3</option>
+                <option value="초4">초4</option>
+                <option value="초5">초5</option>
+                <option value="초6">초6</option>
+                <option value="유치원">유치원</option>
+                <option value="어울림반">어울림반</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1.5rem;">
             <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">업로드 위치 선택</label>
             <select id="target-folder-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;"></select>
         </div>
@@ -657,9 +678,12 @@
 
         <div id="new-folder-input" class="form-group" style="display: none; background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom:1.5rem;">
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="target-date" class="form-input" placeholder="날짜(0412)" style="width: 120px; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
+                <div style="width: 120px;">
+                    <input type="text" id="target-date" class="form-input" placeholder="날짜(0412)" style="width: 100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;" oninput="validateDateInput(this)">
+                </div>
                 <input type="text" id="target-name" class="form-input" placeholder="활동명(과학행사)" style="flex:1; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
             </div>
+            <div id="date-error" class="input-error-msg" style="display: none;">날짜는 숫자 4자리로 입력해 주세요. (예: 0412)</div>
         </div>
         
         <div class="upload-area" onclick="document.getElementById('file-input').click()">
@@ -830,7 +854,7 @@
 
     function renderFolderOptions(folders) {
         const select = document.getElementById('target-folder-select');
-        select.innerHTML = '<option value="">(최상위 폴더)</option>';
+        select.innerHTML = ''; // 중복된 (최상위 폴더) 항목 제거
         folders.forEach(f => {
             const opt = document.createElement('option');
             opt.value = f.id;
@@ -1058,12 +1082,28 @@
         const isNewFolder = document.getElementById('create-folder-check').checked;
         const targetDate = document.getElementById('target-date').value;
         const targetName = document.getElementById('target-name').value;
+        const grade = document.getElementById('grade-select').value;
         
-        if (isNewFolder && (!targetDate || !targetName)) return showToast('날짜와 활동명을 입력하세요.', 'error');
+        if (isNewFolder) {
+            if (!targetDate || !targetName) return showToast('날짜와 활동명을 입력하세요.', 'error');
+            if (!/^\d{4}$/.test(targetDate)) {
+                document.getElementById('date-error').style.display = 'block';
+                return showToast('날짜 형식이 올바르지 않습니다.', 'error');
+            }
+        }
         
         const folderNameForGAS = isNewFolder ? `${targetDate} ${targetName}` : "";
-        // 파일 이름 규칙: 활동명(숫자 제외) + 번호
-        const baseFileName = isNewFolder ? targetName : (document.getElementById('target-folder-select').selectedOptions[0].text.split(' ')[1] || '파일');
+        // 파일 이름 규칙: 학년_활동명 + 번호
+        let activityName = '파일';
+        if (isNewFolder) {
+            activityName = targetName;
+        } else {
+            const folderText = document.getElementById('target-folder-select').selectedOptions[0].text;
+            // "0412 활동명" 또는 "  └ 0412 활동명" 형식에서 활동명만 추출
+            const parts = folderText.trim().split(' ');
+            activityName = parts[parts.length - 1] || '파일';
+        }
+        const baseFileName = `${grade}_${activityName}`;
         
         let currentTargetId = document.getElementById('target-folder-select').value;
         const btn = document.getElementById('upload-btn');
@@ -1190,6 +1230,16 @@
         document.getElementById('new-folder-input').style.display = chk ? 'block' : 'none';
         document.getElementById('target-folder-select').disabled = chk;
     }
+    function validateDateInput(input) {
+        const val = input.value;
+        const errorEl = document.getElementById('date-error');
+        if (val && !/^\d{4}$/.test(val)) {
+            errorEl.style.display = 'block';
+        } else {
+            errorEl.style.display = 'none';
+        }
+    }
+
     function convertBase64(file) {
         return new Promise((r, j) => {
             const rd = new FileReader();
