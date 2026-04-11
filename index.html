@@ -1070,6 +1070,8 @@
     function openUploadModal() {
         filesToUpload = [];
         document.getElementById('selected-files').innerHTML = '';
+        document.getElementById('upload-progress').style.display = 'none';
+        document.getElementById('progress-fill').style.width = '0%';
         document.getElementById('upload-modal').classList.add('active');
         fetchFolderList();
     }
@@ -1132,8 +1134,10 @@
         });
         btn.classList.add('btn-loading');
         
-        document.getElementById('upload-progress').style.display = 'block';
+        const prog = document.getElementById('upload-progress');
         const fill = document.getElementById('progress-fill');
+        prog.style.display = 'block';
+        fill.style.width = '0%';
 
         try {
             for (let i = 0; i < filesToUpload.length; i++) {
@@ -1207,10 +1211,14 @@
 
     async function cleanupUploadedItems() {
         const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
+        
+        // 시각적 정리: 파일 목록 비우기
+        document.getElementById('selected-files').innerHTML = '';
+        
         if (itemsToDelete.length === 0) return;
 
         showLoader(true);
-        showToast("중단 및 자동 삭제 중...", "info");
+        // "중단 중..." 안내는 이미 취소 버튼 텍스트로 표시되고 있음
         try {
             const resp = await fetch(GAS_URL, {
                 method: 'POST',
@@ -1222,9 +1230,9 @@
             });
             const result = await resp.json();
             if (result.success) {
-                showToast("중단 및 청소가 완료되었습니다.", "success");
+                showToast("업로드가 취소되고 정리되었습니다.", "success");
             } else {
-                showToast("청소 실패: " + result.error, "error");
+                showToast("정리 실패: " + result.error, "error");
             }
         } catch (e) {
             showToast("삭제 중 오류가 발생했습니다.", "error");
@@ -1241,7 +1249,12 @@
         
         if (await showCustomConfirm("업로드 중단", "업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
             isCancelled = true;
+            
+            // 모든 버튼 비활성화 (중복 클릭 방지)
+            const upBtn = document.getElementById('upload-btn');
             const cancelBtn = document.getElementById('cancel-upload-btn');
+            
+            upBtn.disabled = true;
             cancelBtn.innerText = "중단 중...";
             cancelBtn.classList.add('btn-loading');
             cancelBtn.disabled = true;
