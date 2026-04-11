@@ -1172,7 +1172,7 @@
                 } catch (e) { 
                     if (isCancelled) break;
                     showToast(`${file.name} 업로드 실패: ${e.message}`, 'error'); 
-                    if (!confirm(`${file.name} 업로드에 실패했습니다. 계속하시겠습니까?`)) break;
+                    if (!(await showCustomConfirm("업로드 실패", `${file.name} 업로드에 실패했습니다. 계속하시겠습니까?`))) break;
                 }
             }
             
@@ -1239,7 +1239,7 @@
             return;
         }
         
-        if (confirm("업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
+        if (await showCustomConfirm("업로드 중단", "업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
             isCancelled = true;
             const cancelBtn = document.getElementById('cancel-upload-btn');
             cancelBtn.innerText = "중단 중...";
@@ -1325,6 +1325,18 @@
         input.value = v;
         document.getElementById('prompt-ok-btn').onclick = () => { closeModal('prompt-modal'); cb(input.value); };
         modal.classList.add('active');
+    }
+    function showCustomConfirm(t, m) {
+        return new Promise(resolve => {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').innerText = t;
+            document.getElementById('confirm-msg').innerText = m;
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = modal.querySelector('#confirm-modal .btn-outline');
+            okBtn.onclick = () => { closeModal('confirm-modal'); resolve(true); };
+            cancelBtn.onclick = () => { closeModal('confirm-modal'); resolve(false); };
+            modal.classList.add('active');
+        });
     }
     function toggleNewFolderInput() {
         const chk = document.getElementById('create-folder-check').checked;
