@@ -1170,6 +1170,7 @@
                     
                     fill.style.width = ((i + 1) / filesToUpload.length * 100) + '%';
                 } catch (e) { 
+                    if (isCancelled) break;
                     showToast(`${file.name} 업로드 실패: ${e.message}`, 'error'); 
                     if (!confirm(`${file.name} 업로드에 실패했습니다. 계속하시겠습니까?`)) break;
                 }
@@ -1181,14 +1182,54 @@
                 loadFolder(currentFolderId);
             }
         } finally {
+            if (isCancelled) {
+                await cleanupUploadedItems();
+                closeModal('upload-modal');
+                loadFolder(currentFolderId);
+            }
+            
             isUploading = false;
             btn.disabled = false;
             btn.classList.remove('btn-loading');
-            modalInputs.forEach(el => el.disabled = false);
+            modalInputs.forEach(el => {
+                if (el.id === 'cancel-upload-btn') {
+                    el.innerText = "취소";
+                    el.classList.remove('btn-loading');
+                }
+                el.disabled = false;
+            });
             
             // Clear cache for the target folder and folder list
             contentCache.delete(currentTargetId || 'root');
             folderListCache = null;
+        }
+    }
+
+    async function cleanupUploadedItems() {
+        const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
+        if (itemsToDelete.length === 0) return;
+
+        showLoader(true);
+        showToast("중단 및 자동 삭제 중...", "info");
+        try {
+            const resp = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'delete',
+                    itemIds: itemsToDelete,
+                    password: ADMIN_PASS
+                })
+            });
+            const result = await resp.json();
+            if (result.success) {
+                showToast("중단 및 청소가 완료되었습니다.", "success");
+            } else {
+                showToast("청소 실패: " + result.error, "error");
+            }
+        } catch (e) {
+            showToast("삭제 중 오류가 발생했습니다.", "error");
+        } finally {
+            showLoader(false);
         }
     }
 
@@ -1200,39 +1241,10 @@
         
         if (confirm("업로드를 중단하고 이미 올라간 항목들을 삭제하시겠습니까?")) {
             isCancelled = true;
-            showLoader(true);
-            showToast("중단 및 자동 삭제 중...", "info");
-            
-            closeModal('upload-modal');
-            
-            // 삭제할 항목 결정 (새 폴더가 생성되었다면 폴더만 삭제하는 것이 효율적)
-            const itemsToDelete = createdFolderId ? [createdFolderId] : uploadedItemIds;
-            
-            if (itemsToDelete.length > 0) {
-                try {
-                    const resp = await fetch(GAS_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'delete',
-                            itemIds: itemsToDelete,
-                            password: ADMIN_PASS
-                        })
-                    });
-                    const result = await resp.json();
-                    if (result.success) {
-                        showToast("중단 및 청소가 완료되었습니다.", "success");
-                    } else {
-                        showToast("청소 실패: " + result.error, "error");
-                    }
-                } catch (e) {
-                    showToast("삭제 중 오류가 발생했습니다.", "error");
-                }
-            } else {
-                showToast("업로드가 중단되었습니다.", "info");
-            }
-            
-            showLoader(false);
-            loadFolder(currentFolderId);
+            const cancelBtn = document.getElementById('cancel-upload-btn');
+            cancelBtn.innerText = "중단 중...";
+            cancelBtn.classList.add('btn-loading');
+            cancelBtn.disabled = true;
         }
     }
 
