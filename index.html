@@ -665,9 +665,11 @@
         </div>
 
         <div id="new-folder-input" class="form-group" style="display: none; background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom:1.5rem;">
-            <div style="display: flex; gap: 10px;">
-                <div style="width: 120px;">
-                    <input type="text" id="target-date" class="form-input" placeholder="날짜(0412)" style="width: 100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;" oninput="validateDateInput(this)">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="text" id="target-date" class="form-input" placeholder="0401" style="width: 70px; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;" oninput="validateDateInput(this)">
+                    <span style="color: #94a3b8;">~</span>
+                    <input type="text" id="target-date-end" class="form-input" placeholder="0405" style="width: 70px; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;" oninput="validateDateInput(this)">
                 </div>
                 <input type="text" id="target-name" class="form-input" placeholder="활동명(과학행사)" style="flex:1; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;">
             </div>
@@ -1092,19 +1094,25 @@
         if (filesToUpload.length === 0) return showToast('파일을 선택하세요.', 'error');
         
         const isNewFolder = document.getElementById('create-folder-check').checked;
-        const targetDate = document.getElementById('target-date').value;
-        const targetName = document.getElementById('target-name').value;
+        const targetDate = (document.getElementById('target-date').value || "").trim();
+        const targetDateEnd = (document.getElementById('target-date-end').value || "").trim();
+        const targetName = (document.getElementById('target-name').value || "").trim();
         const grade = document.getElementById('grade-select').value;
         
         if (isNewFolder) {
-            if (!targetDate || !targetName) return showToast('날짜와 활동명을 입력하세요.', 'error');
+            if (!targetDate || !targetName) return showToast('시작 날짜와 활동명을 입력하세요.', 'error');
             if (!/^\d{4}$/.test(targetDate)) {
                 document.getElementById('date-error').style.display = 'block';
-                return showToast('날짜 형식이 올바르지 않습니다.', 'error');
+                return showToast('시작 날짜 형식이 올바르지 않습니다.', 'error');
+            }
+            if (targetDateEnd && !/^\d{4}$/.test(targetDateEnd)) {
+                document.getElementById('date-error').style.display = 'block';
+                return showToast('종료 날짜 형식이 올바르지 않습니다.', 'error');
             }
         }
         
-        const folderNameForGAS = isNewFolder ? `${targetDate} ${targetName}` : "";
+        const dateString = targetDateEnd ? `${targetDate}-${targetDateEnd}` : targetDate;
+        const folderNameForGAS = isNewFolder ? `${dateString} ${targetName}` : "";
         // 파일 이름 규칙: 학년_활동명 + 번호
         let activityName = '파일';
         if (isNewFolder) {
