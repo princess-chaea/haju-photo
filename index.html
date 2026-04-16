@@ -655,13 +655,14 @@
         <p>활동명에 맞춰 파일 이름이 **활동명1, 활동명2...**로 자동 변경됩니다.</p>
         
         <div class="form-group" style="margin-bottom:1.5rem;">
-            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-weight:600;">업로드 위치 선택</label>
+            <label class="form-label" style="display:block; margin-bottom:0.1rem; font-weight:600;">📁 상위(기준) 폴더 선택</label>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem;">새 폴더 생성 시 위에서 선택한 폴더의 <b>하위</b>에 생성됩니다.</p>
             <select id="target-folder-select" class="form-input" style="width:100%; padding:0.75rem; border-radius:var(--radius-md); border:1px solid #e2e8f0;"></select>
         </div>
 
-        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom:1.5rem;">
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom:0.5rem;">
             <input type="checkbox" id="create-folder-check" onchange="toggleNewFolderInput()">
-            <label for="create-folder-check" style="font-weight: 600;">새 폴더 생성 후 업로드</label>
+            <label for="create-folder-check" style="font-weight: 600;">새 폴더(하위) 생성 후 업로드</label>
         </div>
 
         <div id="new-folder-input" class="form-group" style="display: none; background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom:1.5rem;">
@@ -1126,6 +1127,15 @@
         const baseFileName = grade ? `${grade}_${activityName}` : activityName;
         
         let currentTargetId = document.getElementById('target-folder-select').value;
+        const targetSelect = document.getElementById('target-folder-select');
+        const parentName = targetSelect.options[targetSelect.selectedIndex].text.trim().replace(/^└\s*/, '');
+        
+        let confirmMsg = isNewFolder 
+            ? `[${parentName}] 폴더 하위에\n[${folderNameForGAS}] 폴더를 생성하고 업로드를 시작할까요?` 
+            : `[${parentName}] 폴더에 바로 업로드를 시작할까요?`;
+            
+        if (!(await showCustomConfirm("업로드 확인", confirmMsg))) return;
+        
         const btn = document.getElementById('upload-btn');
         const modalInputs = document.querySelectorAll('#upload-modal input, #upload-modal select, #upload-modal .btn');
         const cancelBtn = document.getElementById('cancel-upload-btn');
