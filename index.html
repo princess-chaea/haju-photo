@@ -1131,8 +1131,8 @@
         const parentName = targetSelect.options[targetSelect.selectedIndex].text.trim().replace(/^└\s*/, '');
         
         let confirmMsg = isNewFolder 
-            ? `[${parentName}] 폴더 하위에\n[${folderNameForGAS}] 폴더를 생성하고 업로드를 시작할까요?` 
-            : `[${parentName}] 폴더에 바로 업로드를 시작할까요?`;
+            ? `[${parentName}] 폴더\n아래에\n[${folderNameForGAS}] 폴더를 생성하고 업로드를 시작할까요?` 
+            : `[${parentName}] 폴더에\n바로 업로드를 시작할까요?`;
             
         if (!(await showCustomConfirm("업로드 확인", confirmMsg))) {
             const selectEl = document.getElementById('target-folder-select');
@@ -1378,7 +1378,7 @@
     function toggleNewFolderInput() {
         const chk = document.getElementById('create-folder-check').checked;
         document.getElementById('new-folder-input').style.display = chk ? 'block' : 'none';
-        document.getElementById('target-folder-select').disabled = chk;
+        // 상위 폴더 선택은 항상 활성화 상태 유지
     }
     function validateDateInput(input) {
         const val = input.value;
