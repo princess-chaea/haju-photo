@@ -1134,7 +1134,13 @@
             ? `[${parentName}] 폴더 하위에\n[${folderNameForGAS}] 폴더를 생성하고 업로드를 시작할까요?` 
             : `[${parentName}] 폴더에 바로 업로드를 시작할까요?`;
             
-        if (!(await showCustomConfirm("업로드 확인", confirmMsg))) return;
+        if (!(await showCustomConfirm("업로드 확인", confirmMsg))) {
+            const selectEl = document.getElementById('target-folder-select');
+            selectEl.disabled = false; // 비활성화 해제
+            selectEl.style.border = '2px solid var(--primary-color)'; // 시각적 강조
+            showToast('상위 폴더를 바꾸려면 여기서 다시 선택해 주세요.', 'info');
+            return;
+        }
         
         const btn = document.getElementById('upload-btn');
         const modalInputs = document.querySelectorAll('#upload-modal input, #upload-modal select, #upload-modal .btn');
